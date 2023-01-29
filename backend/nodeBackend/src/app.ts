@@ -1,10 +1,10 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import * as dotenv from 'dotenv';
 import cors from 'cors';
 import { connect } from 'mongoose';
 
 // import routes
-import { authRouter } from './routes/auth';
+import { authRouter } from './routes/auth.route';
 
 const app = express();
 dotenv.config();
@@ -22,6 +22,14 @@ const run = async () => {
 run();
 
 app.use(cors()) // allow cross-origin requests
+
+app.use(function (req: Request, res: Response, next: NextFunction) {
+    res.header('Content-Type', 'application/json');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    next();
+})
+
 app.use(express.json());    // parse requests of content-type - application/json
 
 app.get('/', (req, res) => {
@@ -30,4 +38,4 @@ app.get('/', (req, res) => {
 
 app.use('/api/auth', authRouter);
 
-export  { app };
+export { app };
