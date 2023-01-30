@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import * as dotenv from 'dotenv';
 import cors from 'cors';
 import { connect } from 'mongoose';
+import cookieParser from 'cookie-parser';
 
 // import routes
 import { authRouter } from './routes/auth.route';
@@ -14,23 +15,26 @@ const run = async () => {
         await connect(process.env.MONGO_URI_DEV!);
     } else if (process.env.VERSION === 'prod') {
         await connect(process.env.MONGO_URI_PROD!);
-    }
-    else {
+    } else {
         console.error('No version specified');
     }
-}
+};
 run();
 
-app.use(cors()) // allow cross-origin requests
+app.use(cors()); // allow cross-origin requests
 
 app.use(function (req: Request, res: Response, next: NextFunction) {
     res.header('Content-Type', 'application/json');
     res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header(
+        'Access-Control-Allow-Headers',
+        'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+    );
     next();
-})
+});
 
-app.use(express.json());    // parse requests of content-type - application/json
+app.use(express.json()); // parse requests of content-type - application/json
+app.use(cookieParser());
 
 app.get('/', (req, res) => {
     res.send('Hello World');
