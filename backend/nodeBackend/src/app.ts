@@ -3,6 +3,9 @@ import * as dotenv from 'dotenv';
 import cors from 'cors';
 import { connect } from 'mongoose';
 import cookieParser from 'cookie-parser';
+import logger from './utils/log.util';
+import expressPino from 'express-pino-logger';
+import pinoHttp from 'pino-http';
 
 // import routes
 import { authRouter } from './routes/auth.route';
@@ -22,6 +25,24 @@ const run = async () => {
 run();
 
 app.use(cors()); // allow cross-origin requests
+app.use(
+    pinoHttp({
+        transport: {
+            target: 'pino-pretty',
+            options: {
+                levelFirst: true,
+                colorize: true,
+                translateTime: true,
+            },
+        },
+    })
+);
+app.use(
+    expressPino({
+        logger,
+        autoLogging: true,
+    })
+);
 
 app.use(function (req: Request, res: Response, next: NextFunction) {
     res.header('Content-Type', 'application/json');

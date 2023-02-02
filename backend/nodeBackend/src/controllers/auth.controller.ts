@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import { SECRET_KEY } from '../middleware/auth.middleware';
+import { SECRET_KEY } from '../middlewares/auth.middleware';
 import { validateLogin } from '../validation/auth.validate';
 import { Auth } from '../models/auth.model';
 import nodeConfig from 'config';
