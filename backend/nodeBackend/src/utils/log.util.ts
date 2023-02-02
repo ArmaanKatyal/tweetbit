@@ -36,7 +36,7 @@ const logger = pino(
         useOnlyCustomLevels: true,
         level: 'http',
     },
-    pino.destination(checkLogExist('logs/combined.log'))
+    pino.destination(checkLogExist('combined.log'))
 );
 
 export default logger;
