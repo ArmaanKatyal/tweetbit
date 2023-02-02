@@ -36,6 +36,7 @@ const login = async (req: Request, res: Response) => {
         {
             id: checkUser._id,
             email: checkUser.email,
+            type: 'access',
         },
         SECRET_KEY,
         {
@@ -47,6 +48,7 @@ const login = async (req: Request, res: Response) => {
         {
             id: checkUser._id,
             email: checkUser.email,
+            type: 'refresh',
         },
         SECRET_KEY,
         {
@@ -94,4 +96,10 @@ const refresh = async (req: Request, res: Response) => {
     });
 };
 
-export { login, logout, refresh };
+const temp = async (req: Request, res: Response) => {
+    res.status(200).json({
+        message: 'You are logged in',
+    });
+};
+
+export { login, logout, refresh, temp };

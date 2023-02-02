@@ -4,12 +4,26 @@ import * as dotenv from 'dotenv';
 import nodeConfig from 'config';
 dotenv.config();
 
+// Define the secret key
 export const SECRET_KEY: Secret = process.env.JWT_SECRET_KEY!;
 
+// Define the custom request interface
 export interface CustomRequest extends Request {
     token: string | JwtPayload;
 }
 
+// Define the payload interface
+export interface TokenPayload {
+    id: string;
+    email: string;
+    type: string;
+    iat: number;
+    exp: number;
+}
+
+/**
+ * Verify the auth token or return an appropriate error code
+ */
 export const verifyToken = async (
     req: Request,
     res: Response,
@@ -23,6 +37,13 @@ export const verifyToken = async (
     }
     try {
         const decoded = await jwt.verify(token, SECRET_KEY);
+        console.log(decoded);
+        // Check if the token has the correct type
+        if ((decoded as TokenPayload).type !== 'access') {
+            return res.status(401).json({
+                error: nodeConfig.get('error_codes.INVALID_TOKEN'),
+            });
+        }
         (req as CustomRequest).token = decoded;
         next();
     } catch (error: Error | any) {
@@ -56,6 +77,12 @@ export const verifyRefreshToken = async (
     }
     try {
         const decoded = await jwt.verify(token, SECRET_KEY);
+        // Check if the token has the correct type
+        if ((decoded as TokenPayload).type !== 'refresh') {
+            return res.status(401).json({
+                error: nodeConfig.get('error_codes.INVALID_TOKEN'),
+            });
+        }
         (req as CustomRequest).token = decoded;
         next();
     } catch (error: Error | any) {
