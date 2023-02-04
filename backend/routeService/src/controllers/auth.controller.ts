@@ -10,12 +10,19 @@ import { v4 as uuidv4 } from 'uuid';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-export const SALT_ROUNDS: string = process.env.SALT_ROUNDS!;
+export const salt: number = parseInt(process.env.SALT_ROUNDS!);
 
 const login = async (req: Request, res: Response) => {
     // Validate input
     const { error } = validateLogin(req.body);
     if (error) {
+        req.log.info({
+            message: 'Invalid input',
+            userEmail: req.body.email,
+            service: 'auth',
+            function: 'login',
+            error: error.details[0].message,
+        });
         return res
             .status(400)
             .json({ error: nodeConfig.get('error_codes.INVALID_INPUT') });
@@ -23,6 +30,12 @@ const login = async (req: Request, res: Response) => {
     // Check if user exists
     let checkAuth = await Auth.findOne({ email: req.body.email });
     if (!checkAuth) {
+        req.log.info({
+            message: 'Auth not found',
+            userEmail: req.body.email,
+            service: 'auth',
+            function: 'login',
+        });
         return res
             .status(400)
             .json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
@@ -33,6 +46,12 @@ const login = async (req: Request, res: Response) => {
         checkAuth.password
     );
     if (!validPassword) {
+        req.log.info({
+            message: 'Invalid password',
+            userEmail: req.body.email,
+            service: 'auth',
+            function: 'login',
+        });
         return res
             .status(400)
             .json({ error: nodeConfig.get('error_codes.INVALID_PASSWORD') });
@@ -40,7 +59,6 @@ const login = async (req: Request, res: Response) => {
     // Create and assign a token
     const access_token = jwt.sign(
         {
-            uuid: checkAuth.uuid,
             email: checkAuth.email,
             type: 'access',
         },
@@ -52,7 +70,6 @@ const login = async (req: Request, res: Response) => {
 
     const refresh_token = jwt.sign(
         {
-            uuid: checkAuth.uuid,
             email: checkAuth.email,
             type: 'refresh',
         },
@@ -70,13 +87,24 @@ const login = async (req: Request, res: Response) => {
     });
 
     // Make a call to the User Database and attach the information with the response
-    let checkUser = await User.findOne({ uuid: checkAuth.uuid, email: checkAuth.email });
+    let checkUser = await User.findOne({
+        uuid: checkAuth.uuid,
+        email: checkAuth.email,
+    });
     if (!checkUser) {
-        return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
+        req.log.info({
+            message: 'User not found',
+            userEmail: req.body.email,
+            service: 'auth',
+            function: 'login',
+        });
+        return res
+            .status(400)
+            .json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
     }
-    
+
     // Remove the uuid and _id from the payload
-    let { uuid, _id, ...newPayload } = checkUser;
+    let { uuid, _id, ...newPayload } = (checkUser as any)._doc;
 
     // Send token
     res.status(200).json({
@@ -96,8 +124,7 @@ const logout = async (req: Request, res: Response) => {
 const refresh = async (req: Request, res: Response) => {
     const access_token = jwt.sign(
         {
-            id: req.body.id,
-            email: req.body.email,
+            email: (req as any).token.email,
         },
         SECRET_KEY,
         {
@@ -114,13 +141,30 @@ const register = async (req: Request, res: Response) => {
     // validate the input data from the body
     const { error } = validateRegister(req.body);
     if (error) {
-        return res.status(400).json({ error: nodeConfig.get('error_codes.INVALID_INPUT') });
+        req.log.info({
+            message: 'Invalid input',
+            userEmail: req.body.email,
+            service: 'auth',
+            function: 'register',
+            error: error.details[0].message,
+        });
+        return res
+            .status(400)
+            .json({ error: nodeConfig.get('error_codes.INVALID_INPUT') });
     }
 
     // Check if user already exists
-    let checkUser = await User.findOne({ email: req.body.email });
+    let checkUser = await Auth.findOne({ email: req.body.email });
     if (checkUser) {
-        return res.status(400).json({ error: nodeConfig.get('error_codes.USER_ALREADY_EXISTS') });
+        req.log.info({
+            message: 'User already exists',
+            userEmail: req.body.email,
+            service: 'auth',
+            function: 'register',
+        });
+        return res
+            .status(400)
+            .json({ error: nodeConfig.get('error_codes.USER_ALREADY_EXISTS') });
     }
 
     // Create a unique ID for the user
@@ -129,32 +173,49 @@ const register = async (req: Request, res: Response) => {
     const newAuth = new Auth({
         uuid: uniqueID,
         email: req.body.email,
-        password: await bcrypt.hashSync(req.body.password, SALT_ROUNDS)
+        password: await bcrypt.hashSync(req.body.password, salt),
     });
 
     try {
         await newAuth.save();
-        res.status(200).json({ message: 'Auth created successfully' });
     } catch (err) {
-        res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
+        req.log.info({
+            message: 'Error while saving user to auth database',
+            userEmail: req.body.email,
+            service: 'auth',
+            function: 'register',
+        });
+        return res.status(500).json({
+            error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR'),
+        });
     }
 
     // Remove password from the payload
     let { password, ...newPayload } = req.body;
-    
+
     // Save the user to user database
     const newUser = new User({
         uuid: uniqueID,
-        ...newPayload
+        ...newPayload,
     });
 
     try {
         await newUser.save();
-        res.status(200).json({ message: 'User created successfully' });
     } catch (err) {
-        res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
+        req.log.info({
+            message: 'Error while saving user to user database',
+            userEmail: req.body.email,
+            service: 'auth',
+            function: 'register',
+        });
+        return res.status(500).json({
+            error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR'),
+        });
     }
 
+    res.status(200).json({
+        message: 'User registered successfully',
+    });
 };
 
 export { login, logout, refresh, register };

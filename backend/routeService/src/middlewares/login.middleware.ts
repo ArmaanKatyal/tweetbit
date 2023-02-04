@@ -1,1 +1,0 @@
-// TODO: add a middleware that validates the cookies and checks if the user is already authenticated
