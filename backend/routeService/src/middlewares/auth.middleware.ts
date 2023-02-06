@@ -23,16 +23,10 @@ export interface TokenPayload {
 /**
  * Verify the auth token or return an appropriate error code
  */
-export const verifyToken = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
+export const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     if (!token) {
-        return res
-            .status(401)
-            .json({ error: nodeConfig.get('error_codes.TOKEN_NOT_FOUND') });
+        return res.status(401).json({ error: nodeConfig.get('error_codes.TOKEN_NOT_FOUND') });
     }
     try {
         const decoded = await jwt.verify(token, SECRET_KEY);
@@ -63,16 +57,10 @@ export const verifyToken = async (
     }
 };
 
-export const verifyRefreshToken = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
+export const verifyRefreshToken = async (req: Request, res: Response, next: NextFunction) => {
     const token = req.cookies.refresh_token;
     if (!token) {
-        return res
-            .status(401)
-            .json({ error: nodeConfig.get('error_codes.TOKEN_NOT_FOUND') });
+        return res.status(401).json({ error: nodeConfig.get('error_codes.TOKEN_NOT_FOUND') });
     }
     try {
         const decoded = await jwt.verify(token, SECRET_KEY);

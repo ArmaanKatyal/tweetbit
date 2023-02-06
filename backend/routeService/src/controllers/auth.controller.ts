@@ -23,9 +23,7 @@ const login = async (req: Request, res: Response) => {
             function: 'login',
             error: error.details[0].message,
         });
-        return res
-            .status(400)
-            .json({ error: nodeConfig.get('error_codes.INVALID_INPUT') });
+        return res.status(400).json({ error: nodeConfig.get('error_codes.INVALID_INPUT') });
     }
     // Check if user exists
     let checkAuth = await Auth.findOne({ email: req.body.email });
@@ -36,15 +34,10 @@ const login = async (req: Request, res: Response) => {
             service: 'auth',
             function: 'login',
         });
-        return res
-            .status(400)
-            .json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
+        return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
     }
     // Check if password is correct
-    const validPassword = await bcrypt.compare(
-        req.body.password,
-        checkAuth.password
-    );
+    const validPassword = await bcrypt.compare(req.body.password, checkAuth.password);
     if (!validPassword) {
         req.log.info({
             message: 'Invalid password',
@@ -52,9 +45,7 @@ const login = async (req: Request, res: Response) => {
             service: 'auth',
             function: 'login',
         });
-        return res
-            .status(400)
-            .json({ error: nodeConfig.get('error_codes.INVALID_PASSWORD') });
+        return res.status(400).json({ error: nodeConfig.get('error_codes.INVALID_PASSWORD') });
     }
     // Create and assign a token
     const access_token = jwt.sign(
@@ -98,9 +89,7 @@ const login = async (req: Request, res: Response) => {
             service: 'auth',
             function: 'login',
         });
-        return res
-            .status(400)
-            .json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
+        return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
     }
 
     // Remove the uuid and _id from the payload
@@ -148,9 +137,7 @@ const register = async (req: Request, res: Response) => {
             function: 'register',
             error: error.details[0].message,
         });
-        return res
-            .status(400)
-            .json({ error: nodeConfig.get('error_codes.INVALID_INPUT') });
+        return res.status(400).json({ error: nodeConfig.get('error_codes.INVALID_INPUT') });
     }
 
     // Check if user already exists
@@ -162,9 +149,7 @@ const register = async (req: Request, res: Response) => {
             service: 'auth',
             function: 'register',
         });
-        return res
-            .status(400)
-            .json({ error: nodeConfig.get('error_codes.USER_ALREADY_EXISTS') });
+        return res.status(400).json({ error: nodeConfig.get('error_codes.USER_ALREADY_EXISTS') });
     }
 
     // Create a unique ID for the user

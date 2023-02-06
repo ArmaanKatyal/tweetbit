@@ -47,9 +47,7 @@ describe('Auth Test', () => {
 
         chai.expect(res.status).to.equal(400);
         chai.expect(res.body).to.have.property('error');
-        chai.expect(res.body.error).to.equal(
-            nodeConfig.get('error_codes.USER_ALREADY_EXISTS')
-        );
+        chai.expect(res.body.error).to.equal(nodeConfig.get('error_codes.USER_ALREADY_EXISTS'));
     });
     it('should not register a new user with invalid input', async () => {
         const res = await chai.request(app).post('/api/auth/register').send({
@@ -62,9 +60,7 @@ describe('Auth Test', () => {
 
         chai.expect(res.status).to.equal(400);
         chai.expect(res.body).to.have.property('error');
-        chai.expect(res.body.error).to.equal(
-            nodeConfig.get('error_codes.INVALID_INPUT')
-        );
+        chai.expect(res.body.error).to.equal(nodeConfig.get('error_codes.INVALID_INPUT'));
     });
     it('should cause an internal server error', async () => {
         const res = await chai.request(app).post('/api/auth/register').send({
@@ -77,9 +73,7 @@ describe('Auth Test', () => {
 
         chai.expect(res.status).to.equal(500);
         chai.expect(res.body).to.have.property('error');
-        chai.expect(res.body.error).to.equal(
-            nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR')
-        );
+        chai.expect(res.body.error).to.equal(nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR'));
     });
     it('should login a user successfully', async () => {
         const res = await chai.request(app).post('/api/auth/login').send({
@@ -122,9 +116,7 @@ describe('Auth Test', () => {
 
         chai.expect(res.status).to.equal(400);
         chai.expect(res.body).to.have.property('error');
-        chai.expect(res.body.error).to.equal(
-            nodeConfig.get('error_codes.INVALID_INPUT')
-        );
+        chai.expect(res.body.error).to.equal(nodeConfig.get('error_codes.INVALID_INPUT'));
     });
     it('should not login as a user that does not exist', async () => {
         const res = await chai.request(app).post('/api/auth/login').send({
@@ -134,9 +126,7 @@ describe('Auth Test', () => {
 
         chai.expect(res.status).to.equal(400);
         chai.expect(res.body).to.have.property('error');
-        chai.expect(res.body.error).to.equal(
-            nodeConfig.get('error_codes.USER_NOT_FOUND')
-        );
+        chai.expect(res.body.error).to.equal(nodeConfig.get('error_codes.USER_NOT_FOUND'));
     });
     it('should not login as a user with incorrect password', async () => {
         const res = await chai.request(app).post('/api/auth/login').send({
@@ -146,9 +136,7 @@ describe('Auth Test', () => {
 
         chai.expect(res.status).to.equal(400);
         chai.expect(res.body).to.have.property('error');
-        chai.expect(res.body.error).to.equal(
-            nodeConfig.get('error_codes.INVALID_PASSWORD')
-        );
+        chai.expect(res.body.error).to.equal(nodeConfig.get('error_codes.INVALID_PASSWORD'));
     });
     it('should not login as auth exists but user does not', async () => {
         const findUser = await User.findOne({ email: 'test@test.com' });
@@ -161,9 +149,7 @@ describe('Auth Test', () => {
 
         chai.expect(res.status).to.equal(400);
         chai.expect(res.body).to.have.property('error');
-        chai.expect(res.body.error).to.equal(
-            nodeConfig.get('error_codes.USER_NOT_FOUND')
-        );
+        chai.expect(res.body.error).to.equal(nodeConfig.get('error_codes.USER_NOT_FOUND'));
         chai.expect(deletedUser.deletedCount).to.equal(1);
 
         await User.create(newPayload);
@@ -194,9 +180,7 @@ describe('Auth Test', () => {
 
         chai.expect(res.status).to.equal(401);
         chai.expect(res.body).to.have.property('error');
-        chai.expect(res.body.error).to.equal(
-            nodeConfig.get('error_codes.INVALID_TOKEN')
-        );
+        chai.expect(res.body.error).to.equal(nodeConfig.get('error_codes.INVALID_TOKEN'));
     });
     it('should not refresh a token with an expired refresh token', async () => {
         let expiredRefreshToken = await jwt.sign(
@@ -211,9 +195,7 @@ describe('Auth Test', () => {
 
         chai.expect(res.status).to.equal(401);
         chai.expect(res.body).to.have.property('error');
-        chai.expect(res.body.error).to.equal(
-            nodeConfig.get('error_codes.TOKEN_EXPIRED')
-        );
+        chai.expect(res.body.error).to.equal(nodeConfig.get('error_codes.TOKEN_EXPIRED'));
     });
     it('should not refresh a token as access_token was given inplace of refresh_token', async () => {
         const res = await chai
@@ -223,8 +205,6 @@ describe('Auth Test', () => {
 
         chai.expect(res.status).to.equal(401);
         chai.expect(res.body).to.have.property('error');
-        chai.expect(res.body.error).to.equal(
-            nodeConfig.get('error_codes.INVALID_TOKEN')
-        );
+        chai.expect(res.body.error).to.equal(nodeConfig.get('error_codes.INVALID_TOKEN'));
     });
 });
