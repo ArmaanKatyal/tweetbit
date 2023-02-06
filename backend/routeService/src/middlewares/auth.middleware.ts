@@ -14,7 +14,6 @@ export interface CustomRequest extends Request {
 
 // Define the payload interface
 export interface TokenPayload {
-    id: string;
     email: string;
     type: string;
     iat: number;
