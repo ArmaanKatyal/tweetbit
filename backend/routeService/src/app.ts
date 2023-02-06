@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import * as dotenv from 'dotenv';
 import cors from 'cors';
-import { connect } from 'mongoose';
+import mongoose,{ connect } from 'mongoose';
 import cookieParser from 'cookie-parser';
 import logger from './utils/log.util';
 import expressPino from 'express-pino-logger';
@@ -12,6 +12,7 @@ import { authRouter } from './routes/auth.route';
 
 const app = express();
 dotenv.config();
+mongoose.set('strictQuery', true);
 
 const run = async () => {
     if (process.env.VERSION === 'dev') {
@@ -22,21 +23,26 @@ const run = async () => {
         console.error('No version specified');
     }
 };
-run();
+
+if (process.env.NODE_ENV !== 'test') {
+    run();
+}
 
 app.use(cors()); // allow cross-origin requests
-app.use(
-    pinoHttp({
-        transport: {
-            target: 'pino-pretty',
-            options: {
-                levelFirst: true,
-                colorize: true,
-                translateTime: true,
+if (process.env.NODE_ENV !== 'test') {
+    app.use(
+        pinoHttp({
+            transport: {
+                target: 'pino-pretty',
+                options: {
+                    levelFirst: true,
+                    colorize: true,
+                    translateTime: true,
+                },
             },
-        },
-    })
-);
+        })
+    );
+}
 app.use(
     expressPino({
         logger,
@@ -58,7 +64,10 @@ app.use(express.json()); // parse requests of content-type - application/json
 app.use(cookieParser());
 
 app.get('/', (req, res) => {
-    res.send('Hello World');
+    res.status(200).json({
+        status: mongoose.connection.readyState,
+        database: mongoose.connection.name,
+    })
 });
 
 app.use('/api/auth', authRouter);
