@@ -7,7 +7,7 @@
         "start": "node ./build/server.js",
         "dev": "ts-node ./src/server.ts",
         "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'src/tests/**/*.ts'",
-        "format": "prettier --write .",
+        "format": "prettier --write 'src/**/*.ts'",
         "coverage": "nyc yarn test"
     },
     "repository": {

@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import * as dotenv from 'dotenv';
 import cors from 'cors';
-import mongoose,{ connect } from 'mongoose';
+import mongoose, { connect } from 'mongoose';
 import cookieParser from 'cookie-parser';
 import logger from './utils/log.util';
 import expressPino from 'express-pino-logger';
@@ -50,9 +50,10 @@ app.use(
     })
 );
 
+// Add headers before the routes are defined
 app.use(function (req: Request, res: Response, next: NextFunction) {
-    res.header('Content-Type', 'application/json');
-    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Content-Type', 'application/json'); // set default content type
+    res.header('Access-Control-Allow-Credentials', 'true'); // allow cookies
     res.header(
         'Access-Control-Allow-Headers',
         'Origin, X-Requested-With, Content-Type, Accept, Authorization'
@@ -67,7 +68,7 @@ app.get('/', (req, res) => {
     res.status(200).json({
         status: mongoose.connection.readyState,
         database: mongoose.connection.name,
-    })
+    });
 });
 
 app.use('/api/auth', authRouter);
