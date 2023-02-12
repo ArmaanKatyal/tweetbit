@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "cockroachdb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              BigInt           @id @default(autoincrement())
+  uuid            String           @unique
+  email           String           @unique
+  first_name      String
+  last_name       String
+  created_at      DateTime         @default(now())
+  favorites_count Int              @default(0)
+  followers_count Int              @default(0)
+  following_count Int              @default(0)
+  tweet           Tweet[]
+  User_Followers  User_Followers[]
+  Tweet_Likes     Tweet_Likes[]
+  Tweet_Comments  Tweet_Comments[]
+}
+
+model Tweet {
+  id             BigInt   @id @default(autoincrement())
+  uuid           String   @unique
+  user_id        BigInt
+  user           User     @relation(fields: [user_id], references: [id])
+  content        String
+  created_at     DateTime @default(now())
+  likes_count    Int      @default(0)
+  retweets_count Int      @default(0)
+}
+
+model User_Followers {
+  id          BigInt @id @default(autoincrement())
+  user_id     BigInt
+  follower_id BigInt
+  follower    User   @relation(fields: [follower_id], references: [id])
+}
+
+model Tweet_Likes {
+  id         BigInt @id @default(autoincrement())
+  tweet_id   BigInt
+  user_id    BigInt
+  user       User   @relation(fields: [user_id], references: [id])
+  created_at DateTime @default(now())
+}
+
+model Tweet_Comments {
+  id         BigInt @id @default(autoincrement())
+  tweet_id   BigInt
+  user_id    BigInt
+  user       User   @relation(fields: [user_id], references: [id])
+  content    String
+  created_at DateTime @default(now())
+}
