@@ -30,7 +30,6 @@ export const verifyToken = async (req: Request, res: Response, next: NextFunctio
     }
     try {
         const decoded = await jwt.verify(token, SECRET_KEY);
-        console.log(decoded);
         // Check if the token has the correct type
         if ((decoded as TokenPayload).type !== 'access') {
             return res.status(401).json({
