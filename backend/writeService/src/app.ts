@@ -11,7 +11,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.get('/', (req: Request, res: Response, next: NextFunction) => {
-    res.status(200).json({ message: 'Hello World!' });
+    res.status(200).json({ message: 'Hello World' });
 });
 
 export { app };
