@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
-import prisma from '../../prisma/client'
+import prisma from '../../prisma/client';
 import nodeConfig from 'config';
-
-import { ServerUnaryCall, sendUnaryData, Server, ServerCredentials } from '@grpc/grpc-js';
+import { tweetClient } from '../services/tweet.service';
 
 // Convert BigInt to string
 (BigInt.prototype as any).toJSON = function () {
@@ -21,8 +20,8 @@ export const createTweet = async (req: Request, res: Response) => {
         // Check if the user exists
         let user = await prisma.user.findUnique({
             where: {
-                email
-            }
+                email,
+            },
         });
         // If the user does not exist, return an error
         if (!user) {
@@ -35,18 +34,33 @@ export const createTweet = async (req: Request, res: Response) => {
                 content,
                 user: {
                     connect: {
-                        id: user.id
-                    }
-                }
-            }
+                        id: user.id,
+                    },
+                },
+            },
         });
-        res.status(201).json({ tweet });
+        res.status(201).json(tweet);
 
         // contact the fanout service using gRPC
-
+        tweetClient.createTweet(
+            {
+                id: tweet.id.toString(),
+                content: tweet.content,
+                userId: tweet.user_id.toString(),
+                uuid: tweet.uuid,
+                createdAt: tweet.created_at.toString(),
+                likesCount: tweet.likes_count,
+                retweetsCount: tweet.retweets_count,
+            },
+            (err, result) => {
+                if (err) {
+                    console.log(err);
+                }
+                console.log(result);
+            }
+        );
     } catch (error: Error | any) {
         console.log(error);
         return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
     }
-
 };

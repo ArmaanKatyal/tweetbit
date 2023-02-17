@@ -9,13 +9,14 @@
         "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'src/test/**/*.ts'",
         "format": "prettier --write 'src/**/*.ts'",
         "coverage": "nyc yarn test",
-        "codegen:buf": "cd proto; buf generate; cd .."
+        "proto:gen": "./scripts/proto-gen.sh"
     },
     "repository": "https://github.com/ArmaanKatyal/tweetbit",
     "author": "ArmaanKatyal",
     "license": "MIT",
     "dependencies": {
         "@grpc/grpc-js": "^1.8.9",
+        "@grpc/proto-loader": "^0.7.5",
         "@prisma/client": "^4.10.1",
         "@types/config": "^3.3.0",
         "@types/cookie-parser": "^1.4.3",

@@ -39,7 +39,9 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
         } else if (error instanceof jwt.JsonWebTokenError) {
             return res.status(401).json({ error: nodeConfig.get('error_codes.INVALID_TOKEN') });
         } else {
-            return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
+            return res
+                .status(500)
+                .json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
         }
     }
 };

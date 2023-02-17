@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package fanout.tweet.v1;
+package fanout;
 
 service TweetService {
     rpc CreateTweet (CreateTweetRequest) returns (CreateTweetResponse) {}
