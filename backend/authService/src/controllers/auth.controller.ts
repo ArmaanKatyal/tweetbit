@@ -51,6 +51,7 @@ const login = async (req: Request, res: Response) => {
     const access_token = jwt.sign(
         {
             email: checkAuth.email,
+            uuid: checkAuth.uuid,
             type: 'access',
         },
         SECRET_KEY,
@@ -62,6 +63,7 @@ const login = async (req: Request, res: Response) => {
     const refresh_token = jwt.sign(
         {
             email: checkAuth.email,
+            uuid: checkAuth.uuid,
             type: 'refresh',
         },
         SECRET_KEY,
