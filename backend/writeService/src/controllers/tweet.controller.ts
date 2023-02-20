@@ -25,7 +25,7 @@ export const createTweet = async (req: Request, res: Response) => {
         });
         // If the user does not exist, return an error
         if (!user) {
-            return res.status(404).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
+            return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
         // Create the tweet
         let tweet = await prisma.tweet.create({
