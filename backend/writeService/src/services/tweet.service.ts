@@ -6,7 +6,7 @@ import nodeConfig from 'config';
 
 const PROTO_FILE = './proto/tweet.proto';
 
-const packageDef = protoLoader.loadSync(path.resolve(__dirname, PROTO_FILE));
+const packageDef = protoLoader.loadSync(path.resolve(__dirname, `../../${PROTO_FILE}`));
 const grpcObj = grpc.loadPackageDefinition(packageDef) as unknown as ProtoGrpcType;
 
 export const tweetClient = new grpcObj.fanout.TweetService(

@@ -52,11 +52,10 @@ export const createTweet = async (req: Request, res: Response) => {
                 likesCount: tweet.likes_count,
                 retweetsCount: tweet.retweets_count,
             },
-            (err, result) => {
+            (err) => {
                 if (err) {
                     console.log(err);
                 }
-                console.log(result);
             }
         );
     } catch (error: Error | any) {
