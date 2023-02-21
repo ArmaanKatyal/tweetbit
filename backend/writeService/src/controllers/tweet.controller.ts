@@ -11,7 +11,6 @@ import { tweetClient } from '../services/tweet.service';
 // What happens when a tweet is created
 // 1. Tweet is stored in the sql database on the users timeline
 // 2. Contacts the fanoutService using gRPC to publish the tweet to the fanout queue
-// 3. broadcast on the kafka/RabbitMQ fanout queue which is consumed by the other services
 export const createTweet = async (req: Request, res: Response) => {
     // create a tweet for the user in the database
     let { email, uuid } = (req as any).token;
@@ -25,8 +24,14 @@ export const createTweet = async (req: Request, res: Response) => {
         });
         // If the user does not exist, return an error
         if (!user) {
+            req.log.error({
+                message: 'User not found',
+                email,
+                uuid,
+            });
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
+
         // Create the tweet
         let tweet = await prisma.tweet.create({
             data: {
@@ -54,12 +59,23 @@ export const createTweet = async (req: Request, res: Response) => {
             },
             (err) => {
                 if (err) {
-                    console.log(err);
+                    req.log.error({
+                        message: 'Error trasmitting tweet to fanout service',
+                        email,
+                        uuid,
+                    });
+                    return res
+                        .status(500)
+                        .json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
                 }
             }
         );
     } catch (error: Error | any) {
-        console.log(error);
+        req.log.error({
+            message: 'Error creating tweet',
+            email,
+            uuid,
+        });
         return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
     }
 };

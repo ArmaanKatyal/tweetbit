@@ -1,11 +1,28 @@
-version: '3.9'
-name: cockroachdb
+# version: '3.9'
+# name: cockroachdb
+# services:
+#  crdb:
+#    image: cockroachdb/cockroach:v21.2.3
+#    ports:
+#      - "26257:26257"
+#      - "8080:8080"
+#    command: start-single-node --insecure
+#    volumes:
+#      - "${PWD}/cockroach-data/crdb:/cockroach/cockroach-data"
+
+# docker-compose.yml
+version: '3.8'
 services:
- crdb:
-   image: cockroachdb/cockroach:v21.2.3
-   ports:
-     - "26257:26257"
-     - "8080:8080"
-   command: start-single-node --insecure
-   volumes:
-     - "${PWD}/cockroach-data/crdb:/cockroach/cockroach-data"
+  db:
+    image: postgres:14.1-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - db:/var/lib/postgresql/data
+volumes:
+  db:
+    driver: local
