@@ -43,8 +43,8 @@ model User_Followers {
 
 model Tweet_Likes {
   id         Int   @id @default(autoincrement())
-  tweet_id   Int
-  user_id    Int
+  tweet_id   Int  @unique
+  user_id    Int  @unique
   created_at DateTime @default(now())
   user       User     @relation(fields: [user_id], references: [id])
 }

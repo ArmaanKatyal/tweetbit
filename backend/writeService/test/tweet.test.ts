@@ -27,7 +27,7 @@ describe('/api/tweet', async () => {
     describe('[POST] /api/tweet/create', () => {
         beforeEach(async () => {
             // mock the createTweet function
-            sinon.mock(tweetClient).expects('createTweet').returns(null);
+            sinon.mock(tweetClient).expects('createTweet').returns({});
         });
         afterEach(async () => {
             sinon.restore();

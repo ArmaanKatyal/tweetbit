@@ -7,9 +7,9 @@ service TweetService {
 }
 
 message CreateTweetRequest {
-    string id = 1;
+    int32 id = 1;
     string content = 2;
-    string user_id = 3;
+    int32 user_id = 3;
     string uuid = 4;
     string created_at = 5;
     int32 likes_count = 6;
