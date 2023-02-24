@@ -1,7 +1,8 @@
 import chai from 'chai';
-import {verifyToken} from '../src/middlewares/auth.middleware';
+import {SECRET_KEY, verifyToken} from '../src/middlewares/auth.middleware';
 import * as sinon from 'sinon';
 import { Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
 
 describe('Auth middleware', () => {
     let req: Request, res: Response, next: sinon.SinonSpy<any[], any>;
@@ -37,6 +38,30 @@ describe('Auth middleware', () => {
 
     it('should not call next function as token is invalid', () => {
         req.header = sinon.stub().returns(`Bearer ${process.env.TEST_TOKEN}123`);
+        verifyToken(req, res, next);
+        chai.expect(next.called).to.be.false;
+    });
+
+    it('should not call next function as token is expired', () => {
+        const expiredToken = jwt.sign({
+            email: 'test@test.com',
+            uuid: '123',
+            type: 'access',
+        }, SECRET_KEY, { expiresIn: '1ms' });
+
+        req.header = sinon.stub().returns(`Bearer ${expiredToken}`);
+        verifyToken(req, res, next);
+        chai.expect(next.called).to.be.false;
+    });
+
+    it('should not call next function as token type is not access', () => {
+        const refreshToken = jwt.sign({
+            email: 'test@test.com',
+            uuid: '123',
+            type: 'refresh',
+        }, SECRET_KEY, { expiresIn: '1h' });
+
+        req.header = sinon.stub().returns(`Bearer ${refreshToken}`);
         verifyToken(req, res, next);
         chai.expect(next.called).to.be.false;
     });

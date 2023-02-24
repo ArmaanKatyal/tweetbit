@@ -6,6 +6,7 @@ import { PrismaClient } from '@prisma/client';
 import chai from 'chai';
 import * as sinon from 'sinon';
 import { tweetClient } from '../src/services/tweet.service';
+import { checkIfUserExists } from '../src/helpers/verifyUser.helper';
 
 declare global {
     namespace NodeJS {
@@ -24,8 +25,27 @@ const prisma = global.prisma || new PrismaClient();
 dotenv.config();
 const test_token = process.env.TEST_TOKEN || '';
 describe('/api/tweet', async () => {
+    before(async () => {
+        // create a test user
+        await prisma.user.create({
+            data: {
+                email: 'test@abc.com',
+                uuid: process.env.TEST_UUID!,
+                first_name: 'test',
+                last_name: 'test',
+            }
+        });
+    });
+    after(async () => {
+        await prisma.user.delete({
+                where: {
+                    email: 'test@abc.com',
+                }
+        });
+    });
     describe('[POST] /api/tweet/create', () => {
         beforeEach(async () => {
+            sinon.createSandbox();
             // mock the createTweet function
             sinon.mock(tweetClient).expects('createTweet').returns({});
         });
@@ -55,6 +75,26 @@ describe('/api/tweet', async () => {
             chai.expect(body.content).to.equal('TEST');
         });
     });
+    
+    describe('[POST] /delete/:tweetId', async () => {});
+
+    describe('[POST] /api/tweet/like/:tweetId', async () => {});
+
+    describe('[POST] /api/tweet/unlike/:tweetId', async () => {});
+
+    describe('[POST] /api/tweet/retweet/:tweetId', async () => {});
+
+    describe('[POST] /api/tweet/comment/:tweetId', async () => {});
+
+    describe('helper/verify_user', () => {
+        it('should return true and the user id', async () => {
+            const [exists, id] = await checkIfUserExists('test@abc.com');
+            chai.expect(exists).to.be.true;
+        });
+        it('should return false and null', async () => {
+            const [exists, id] = await checkIfUserExists('someRandomText');
+            chai.expect(exists).to.be.false;
+            chai.expect(id).to.be.null;
+        });
+    });
 });
-
-
