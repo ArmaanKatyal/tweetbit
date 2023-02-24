@@ -339,4 +339,44 @@ export const retweetTweet = async (req: Request, res: Response) => {
  * @param req {Request} {params: {tweetId: string}
  * @param res 
  */
-export const commentTweet = async (req: Request, res: Response) => {};
+export const commentTweet = async (req: Request, res: Response) => {
+    let { email, uuid } = (req as any).token;
+    let { tweetId } = req.params;
+    let { content } = req.body;
+
+    try {
+        let [userExists, user_id] = await checkIfUserExists(email);
+        if (!userExists) {
+            req.log.error({
+                message: 'User not found',
+                email,
+                uuid,
+            });
+            return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
+        }
+
+        // create a new comment
+        let comment = await prisma.tweet_Comments.create({
+            data: {
+                tweet_id: parseInt(tweetId, 10),
+                content,
+                user: {
+                    connect: {
+                        id: user_id!,
+                    },
+                },
+            }
+        });
+        res.status(200).json(comment);
+
+        // TODO: contact the fanout service using gRPC
+        
+    } catch (error: Error | any) {
+        req.log.error({
+            message: 'Error commenting tweet',
+            email,
+            uuid,
+        });
+        return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
+    }
+};

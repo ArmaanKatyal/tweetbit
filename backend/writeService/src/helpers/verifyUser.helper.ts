@@ -1,4 +1,4 @@
-import prisma from '../client';
+import prisma from '../../prisma/client';
 
 export const checkIfUserExists = async (email: string): Promise<[boolean, number | null]> => {
     let user = await prisma.user.findUnique({
