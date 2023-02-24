@@ -337,7 +337,7 @@ export const retweetTweet = async (req: Request, res: Response) => {
 /**
  * add a comment to a tweet
  * @param req {Request} {params: {tweetId: string}
- * @param res 
+ * @param res
  */
 export const commentTweet = async (req: Request, res: Response) => {
     let { email, uuid } = (req as any).token;
@@ -365,12 +365,11 @@ export const commentTweet = async (req: Request, res: Response) => {
                         id: user_id!,
                     },
                 },
-            }
+            },
         });
         res.status(200).json(comment);
 
         // TODO: contact the fanout service using gRPC
-        
     } catch (error: Error | any) {
         req.log.error({
             message: 'Error commenting tweet',
