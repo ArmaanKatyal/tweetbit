@@ -1,5 +1,5 @@
 import chai from 'chai';
-import {SECRET_KEY, verifyToken} from '../src/middlewares/auth.middleware';
+import { SECRET_KEY, verifyToken } from '../src/middlewares/auth.middleware';
 import * as sinon from 'sinon';
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
@@ -10,6 +10,9 @@ describe('Auth middleware', () => {
         sinon.createSandbox();
         req = {
             header: sinon.stub().returns(`Bearer ${process.env.TEST_TOKEN}`),
+            log: {
+                error: sinon.stub(),
+            },
         } as unknown as Request;
         // mock the response object using sinon
         res = {
@@ -43,11 +46,15 @@ describe('Auth middleware', () => {
     });
 
     it('should not call next function as token is expired', () => {
-        const expiredToken = jwt.sign({
-            email: 'test@test.com',
-            uuid: '123',
-            type: 'access',
-        }, SECRET_KEY, { expiresIn: '1ms' });
+        const expiredToken = jwt.sign(
+            {
+                email: 'test@test.com',
+                uuid: '123',
+                type: 'access',
+            },
+            SECRET_KEY,
+            { expiresIn: '1ms' }
+        );
 
         req.header = sinon.stub().returns(`Bearer ${expiredToken}`);
         verifyToken(req, res, next);
@@ -55,11 +62,15 @@ describe('Auth middleware', () => {
     });
 
     it('should not call next function as token type is not access', () => {
-        const refreshToken = jwt.sign({
-            email: 'test@test.com',
-            uuid: '123',
-            type: 'refresh',
-        }, SECRET_KEY, { expiresIn: '1h' });
+        const refreshToken = jwt.sign(
+            {
+                email: 'test@test.com',
+                uuid: '123',
+                type: 'refresh',
+            },
+            SECRET_KEY,
+            { expiresIn: '1h' }
+        );
 
         req.header = sinon.stub().returns(`Bearer ${refreshToken}`);
         verifyToken(req, res, next);

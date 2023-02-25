@@ -6,7 +6,7 @@
         "build": "tsc",
         "start": "NODE_ENV=prod node ./build/server.js",
         "dev": "NODE_ENV=dev ts-node ./src/server.ts",
-        "format": "prettier --write 'src/**/*.ts'",
+        "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
         "coverage": "nyc yarn test",
         "proto:gen": "./scripts/proto-gen.sh",
         "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' NODE_ENV=test mocha -r ts-node/register 'test/**/*.ts'"

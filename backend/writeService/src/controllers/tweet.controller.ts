@@ -39,7 +39,6 @@ export const createTweet = async (req: Request, res: Response) => {
                 },
             },
         });
-        res.status(201).json(tweet);
 
         // contact the fanout service using gRPC
         tweetClient.createTweet(
@@ -65,6 +64,7 @@ export const createTweet = async (req: Request, res: Response) => {
                 }
             }
         );
+        res.status(201).json(tweet);
         req.log.info({
             message: 'Tweet created',
             email,
