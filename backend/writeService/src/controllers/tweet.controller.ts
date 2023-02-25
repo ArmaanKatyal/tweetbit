@@ -169,6 +169,8 @@ export const likeTweet = async (req: Request, res: Response) => {
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
 
+        // TODO: check if the user has already liked the tweet. If yes, return an error
+
         // increment the tweet likes count
         let tweet = await prisma.tweet.update({
             where: {
@@ -180,7 +182,6 @@ export const likeTweet = async (req: Request, res: Response) => {
                 },
             },
         });
-        res.status(200).json(tweet);
         // add the user to the tweet likes
         await prisma.tweet_Likes.create({
             data: {
@@ -189,7 +190,11 @@ export const likeTweet = async (req: Request, res: Response) => {
                         id: user_id!,
                     },
                 },
-                tweet_id: parseInt(tweetId, 10),
+                tweet: {
+                    connect: {
+                        id: parseInt(tweetId, 10),
+                    },
+                },
             },
         });
 
@@ -198,6 +203,7 @@ export const likeTweet = async (req: Request, res: Response) => {
             email,
             uuid,
         });
+        res.status(200).json(tweet);
     } catch (error: Error | any) {
         req.log.error({
             message: 'Error liking tweet',
@@ -238,20 +244,22 @@ export const unlikeTweet = async (req: Request, res: Response) => {
                 },
             },
         });
-        res.status(200).json(tweet);
 
         // delete the user from the tweet likes
-        await prisma.tweet_Likes.delete({
+        let deleted_like = await prisma.tweet_Likes.deleteMany({
             where: {
                 tweet_id: parseInt(tweetId, 10),
                 user_id: user_id!,
             },
         });
+        res.status(200).json({ tweet, deleted_like });
     } catch (error: Error | any) {
+        console.log(error);
         req.log.error({
             message: 'Error unliking tweet',
             email,
             uuid,
+            error,
         });
         return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
     }
@@ -358,11 +366,15 @@ export const commentTweet = async (req: Request, res: Response) => {
         // create a new comment
         let comment = await prisma.tweet_Comments.create({
             data: {
-                tweet_id: parseInt(tweetId, 10),
                 content,
                 user: {
                     connect: {
                         id: user_id!,
+                    },
+                },
+                tweet: {
+                    connect: {
+                        id: parseInt(tweetId, 10),
                     },
                 },
             },

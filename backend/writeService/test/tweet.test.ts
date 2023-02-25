@@ -1,12 +1,12 @@
-import request from 'supertest';
-import { app } from '../src/app';
-import dotenv from 'dotenv';
-import nodeConfig from 'config';
 import { PrismaClient } from '@prisma/client';
 import chai from 'chai';
+import nodeConfig from 'config';
+import dotenv from 'dotenv';
 import * as sinon from 'sinon';
-import { tweetClient } from '../src/services/tweet.service';
+import request from 'supertest';
+import { app } from '../src/app';
 import { checkIfUserExists } from '../src/helpers/verifyUser.helper';
+import { tweetClient } from '../src/services/tweet.service';
 
 declare global {
     namespace NodeJS {
@@ -154,13 +154,114 @@ describe('/api/tweet', async () => {
                 .set('Authorization', 'Bearer ' + test_token);
             chai.expect(response.status).to.equal(500);
             chai.expect(response.body).to.have.property('error');
-            chai.expect(response.body.error).to.equal(nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR'));
+            chai.expect(response.body.error).to.equal(
+                nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR')
+            );
         });
     });
 
-    describe('[POST] /api/tweet/like/:tweetId', async () => {});
+    describe('[POST] /api/tweet/like/:tweetId', async () => {
+        let existingTweet: any;
+        before(async () => {
+            existingTweet = await prisma.tweet.create({
+                data: {
+                    uuid: process.env.TEST_UUID!,
+                    content: 'TEST',
+                    user: {
+                        connect: {
+                            email: 'test@abc.com',
+                        },
+                    },
+                },
+            });
+        });
+        beforeEach(async () => {
+            sinon.createSandbox();
+            // mock the deleteTweet function
+            // sinon.mock(tweetClient).expects('deleteTweet').returns({});
+        });
+        afterEach(async () => {
+            sinon.restore();
+        });
+        after(async () => {
+            await prisma.$transaction([
+                prisma.tweet.deleteMany(),
+                prisma.tweet_Likes.deleteMany(),
+                prisma.tweet_Comments.deleteMany(),
+            ]);
+        });
 
-    describe('[POST] /api/tweet/unlike/:tweetId', async () => {});
+        it('should like a tweet', async () => {
+            const res = await request(app)
+                .post(`/api/tweet/like/${existingTweet.id}`)
+                .set('Authorization', 'Bearer ' + test_token);
+            let [_, user_id] = await checkIfUserExists('test@abc.com');
+            let likedTweet = await prisma.tweet_Likes.findFirst({
+                where: {
+                    user_id: user_id!,
+                    tweet_id: existingTweet.id,
+                },
+            });
+            chai.expect(res.status).to.equal(200);
+            chai.expect(res.body).to.have.property('id');
+            chai.expect(res.body).to.have.property('user_id');
+            chai.expect(res.body.likes_count).to.equal(1);
+            chai.expect(likedTweet).to.not.be.null;
+            chai.expect(likedTweet!.tweet_id).to.equal(existingTweet.id);
+            chai.expect(likedTweet!.user_id).to.equal(user_id);
+        });
+    });
+
+    describe('[POST] /api/tweet/unlike/:tweetId', async () => {
+        let existingTweet: any;
+        before(async () => {
+            existingTweet = await prisma.tweet.create({
+                data: {
+                    uuid: process.env.TEST_UUID!,
+                    content: 'TEST',
+                    likes_count: 2,
+                    user: {
+                        connect: {
+                            email: 'test@abc.com',
+                        },
+                    },
+                },
+            });
+        });
+        beforeEach(async () => {
+            sinon.createSandbox();
+            // mock the deleteTweet function
+            // sinon.mock(tweetClient).expects('deleteTweet').returns({});
+        });
+        afterEach(async () => {
+            sinon.restore();
+        });
+        after(async () => {
+            await prisma.$transaction([
+                prisma.tweet.deleteMany(),
+                prisma.tweet_Likes.deleteMany(),
+                prisma.tweet_Comments.deleteMany(),
+            ]);
+        });
+
+        it('should unlike a tweet', async () => {
+            let [_, user_id] = await checkIfUserExists('test@abc.com');
+            const res = await request(app)
+                .post(`/api/tweet/unlike/${existingTweet.id}`)
+                .set('Authorization', 'Bearer ' + test_token);
+            let dislikedTweet = await prisma.tweet_Likes.findFirst({
+                where: {
+                    user_id: user_id!,
+                    tweet_id: existingTweet.id,
+                },
+            });
+            chai.expect(res.status).to.equal(200);
+            chai.expect(res.body).to.have.property('id');
+            chai.expect(res.body).to.have.property('user_id');
+            chai.expect(res.body.likes_count).to.equal(1);
+            chai.expect(dislikedTweet).to.be.null;
+        });
+    });
 
     describe('[POST] /api/tweet/retweet/:tweetId', async () => {});
 
@@ -168,7 +269,7 @@ describe('/api/tweet', async () => {
 
     describe('helper/verify_user', () => {
         it('should return true and the user id', async () => {
-            const [exists, id] = await checkIfUserExists('test@abc.com');
+            const [exists, _] = await checkIfUserExists('test@abc.com');
             chai.expect(exists).to.be.true;
         });
         it('should return false and null', async () => {

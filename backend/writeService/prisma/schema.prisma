@@ -25,19 +25,21 @@ model User {
 
 model Tweet {
   id             Int   @id @default(autoincrement())
-  uuid           String
-  user_id        Int
+  uuid           String @unique
+  user_id        Int  @unique
   content        String
   created_at     DateTime @default(now())
   likes_count    Int      @default(0)
   retweets_count Int      @default(0)
   user           User     @relation(fields: [user_id], references: [id])
+  Tweet_Likes     Tweet_Likes[]
+  Tweet_Comments  Tweet_Comments[]
 }
 
 model User_Followers {
   id          Int @id @default(autoincrement())
-  user_id     Int
-  follower_id Int
+  user_id     Int @unique
+  follower_id Int @unique
   follower    User   @relation(fields: [follower_id], references: [id])
 }
 
@@ -47,13 +49,15 @@ model Tweet_Likes {
   user_id    Int  @unique
   created_at DateTime @default(now())
   user       User     @relation(fields: [user_id], references: [id])
+  tweet      Tweet    @relation(fields: [tweet_id], references: [id])
 }
 
 model Tweet_Comments {
   id         Int   @id @default(autoincrement())
-  tweet_id   Int
-  user_id    Int
+  tweet_id   Int @unique
+  user_id    Int @unique
   content    String
   created_at DateTime @default(now())
   user       User     @relation(fields: [user_id], references: [id])
+  tweet      Tweet    @relation(fields: [tweet_id], references: [id])
 }
