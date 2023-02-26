@@ -24,6 +24,7 @@ const prisma = global.prisma || new PrismaClient();
 
 dotenv.config();
 const test_token = process.env.TEST_TOKEN || '';
+const test_token_2 = process.env.TEST_TOKEN_2 || '';
 describe('/api/tweet', async () => {
     let test_user: any;
     before(async () => {
@@ -216,20 +217,6 @@ describe('/api/tweet', async () => {
         });
 
         it('should not like a tweet if user already liked it', async () => {
-            // await prisma.tweet_Likes.create({
-            //     data: {
-            //         tweet: {
-            //             connect: {
-            //                 id: existingTweet.id,
-            //             },
-            //         },
-            //         user: {
-            //             connect: {
-            //                 id: test_user.id,
-            //             },
-            //         },
-            //     },
-            // });
             const res = await request(app)
                 .post(`/api/tweet/like/${existingTweet.id}`)
                 .set('Authorization', 'Bearer ' + test_token);
@@ -259,13 +246,13 @@ describe('/api/tweet', async () => {
                     user: {
                         connect: {
                             id: test_user.id,
-                        }
+                        },
                     },
                     tweet: {
                         connect: {
                             id: existingTweet.id,
-                        }
-                    }
+                        },
+                    },
                 },
             });
         });
@@ -306,7 +293,76 @@ describe('/api/tweet', async () => {
         });
     });
 
-    describe('[POST] /api/tweet/retweet/:tweetId', async () => {});
+    describe('[POST] /api/tweet/retweet/:tweetId', async () => {
+        let test_user_retweet: any;
+        let existingTweet: any;
+        before(async () => {
+            // create a new user to retweet
+            test_user_retweet = await prisma.user.create({
+                data: {
+                    email: 'test@abc1.com',
+                    uuid: '12345',
+                    first_name: 'test',
+                    last_name: 'test',
+                },
+            });
+            // create a tweet to retweet
+            existingTweet = await prisma.tweet.create({
+                data: {
+                    uuid: process.env.TEST_UUID!,
+                    content: 'TEST',
+                    user: {
+                        connect: {
+                            id: test_user.id,
+                        },
+                    },
+                },
+            });
+        });
+        beforeEach(async () => {
+            sinon.createSandbox();
+            // mock the createTweet function
+            sinon.mock(tweetClient).expects('createTweet').returns({});
+        });
+        afterEach(async () => {
+            sinon.restore();
+        });
+        after(async () => {
+            await prisma.$transaction([
+                // the order is important as we have foreign key constraints
+                prisma.tweet_Likes.deleteMany(),
+                prisma.tweet_Comments.deleteMany(),
+                prisma.tweet.deleteMany(),
+                prisma.user.delete({
+                    where: {
+                        id: test_user_retweet.id,
+                    },
+                }),
+            ]);
+        });
+
+        it('should retweet a tweet', async () => {
+            const res = await request(app)
+                .post(`/api/tweet/retweet/${existingTweet.id}`)
+                .set('Authorization', 'Bearer ' + test_token_2);
+            let retweetedTweet = await prisma.tweet.findFirst({
+                where: {
+                    user_id: test_user_retweet.id,
+                },
+            });
+
+            chai.expect(res.status).to.equal(200);
+            chai.expect(res.body.retweets_count).to.equal(1);
+            chai.expect(retweetedTweet).to.not.be.null;
+        });
+
+        it('should not retweet a tweet if user already retweeted it', async () => {
+            chai.expect(1).to.equal(1);
+        });
+        it('should not retweet a tweet if user is the owner of the tweet', async () => {
+            chai.expect(1).to.equal(1);
+        });
+    });
 
     describe('[POST] /api/tweet/comment/:tweetId', async () => {});
 

@@ -43,6 +43,7 @@ export const createTweet = async (req: Request, res: Response) => {
         // contact the fanout service using gRPC
         tweetClient.createTweet(
             {
+                // TODO: Try if ...tweet works
                 id: tweet.id,
                 content: tweet.content,
                 userId: tweet.user_id,
@@ -208,7 +209,7 @@ export const likeTweet = async (req: Request, res: Response) => {
             message: 'Error liking tweet',
             email,
             uuid,
-            error
+            error,
         });
         return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
     }
@@ -284,6 +285,9 @@ export const retweetTweet = async (req: Request, res: Response) => {
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
 
+        // TODO: the creater of the original tweet should not be able to retweet his own tweet
+        // TODO: check if the user has already retweeted the tweet
+
         // increase the retweet count of the original tweet
         let existingTweet = await prisma.tweet.update({
             where: {
@@ -332,6 +336,13 @@ export const retweetTweet = async (req: Request, res: Response) => {
                 }
             }
         );
+
+        req.log.info({
+            message: 'Tweet retweeted',
+            email,
+            uuid,
+        });
+        res.status(200).json(existingTweet);
     } catch (error: Error | any) {
         req.log.error({
             message: 'Error retweeting tweet',
