@@ -25,9 +25,10 @@ const prisma = global.prisma || new PrismaClient();
 dotenv.config();
 const test_token = process.env.TEST_TOKEN || '';
 describe('/api/tweet', async () => {
+    let test_user: any;
     before(async () => {
         // create a test user
-        await prisma.user.create({
+        test_user = await prisma.user.create({
             data: {
                 email: 'test@abc.com',
                 uuid: process.env.TEST_UUID!,
@@ -39,7 +40,7 @@ describe('/api/tweet', async () => {
     after(async () => {
         await prisma.user.delete({
             where: {
-                email: 'test@abc.com',
+                id: test_user.id,
             },
         });
     });
@@ -54,9 +55,10 @@ describe('/api/tweet', async () => {
         });
         after(async () => {
             await prisma.$transaction([
-                prisma.tweet.deleteMany(),
+                // the order is important as we have foreign key constraints
                 prisma.tweet_Likes.deleteMany(),
                 prisma.tweet_Comments.deleteMany(),
+                prisma.tweet.deleteMany(),
             ]);
         });
         it('should return 201 and the created tweet', async () => {
@@ -116,7 +118,7 @@ describe('/api/tweet', async () => {
                     content: 'DELETED_TEST',
                     user: {
                         connect: {
-                            email: 'test@abc.com',
+                            id: test_user.id,
                         },
                     },
                 },
@@ -132,9 +134,10 @@ describe('/api/tweet', async () => {
         });
         after(async () => {
             await prisma.$transaction([
-                prisma.tweet.deleteMany(),
+                // the order is important as we have foreign key constraints
                 prisma.tweet_Likes.deleteMany(),
                 prisma.tweet_Comments.deleteMany(),
+                prisma.tweet.deleteMany(),
             ]);
         });
 
@@ -143,8 +146,8 @@ describe('/api/tweet', async () => {
                 .post(`/api/tweet/delete/${tweet.id}`)
                 .set('Authorization', 'Bearer ' + test_token);
             chai.expect(response.status).to.equal(200);
-            chai.expect(response.body.id).to.equal(tweet.id);
-            chai.expect(response.body.content).to.equal('DELETED_TEST');
+            chai.expect(response.body.tweet.id).to.equal(tweet.id);
+            chai.expect(response.body.tweet.content).to.equal('DELETED_TEST');
         });
 
         it('should not delete a tweet as prisma fails', async () => {
@@ -169,7 +172,7 @@ describe('/api/tweet', async () => {
                     content: 'TEST',
                     user: {
                         connect: {
-                            email: 'test@abc.com',
+                            id: test_user.id,
                         },
                     },
                 },
@@ -185,9 +188,10 @@ describe('/api/tweet', async () => {
         });
         after(async () => {
             await prisma.$transaction([
-                prisma.tweet.deleteMany(),
+                // the order is important as we have foreign key constraints
                 prisma.tweet_Likes.deleteMany(),
                 prisma.tweet_Comments.deleteMany(),
+                prisma.tweet.deleteMany(),
             ]);
         });
 
@@ -210,6 +214,29 @@ describe('/api/tweet', async () => {
             chai.expect(likedTweet!.tweet_id).to.equal(existingTweet.id);
             chai.expect(likedTweet!.user_id).to.equal(user_id);
         });
+
+        it('should not like a tweet if user already liked it', async () => {
+            // await prisma.tweet_Likes.create({
+            //     data: {
+            //         tweet: {
+            //             connect: {
+            //                 id: existingTweet.id,
+            //             },
+            //         },
+            //         user: {
+            //             connect: {
+            //                 id: test_user.id,
+            //             },
+            //         },
+            //     },
+            // });
+            const res = await request(app)
+                .post(`/api/tweet/like/${existingTweet.id}`)
+                .set('Authorization', 'Bearer ' + test_token);
+            chai.expect(res.status).to.equal(400);
+            chai.expect(res.body).to.have.property('error');
+            chai.expect(res.body.error).to.equal(nodeConfig.get('error_codes.TWEET_ALREADY_LIKED'));
+        });
     });
 
     describe('[POST] /api/tweet/unlike/:tweetId', async () => {
@@ -227,6 +254,20 @@ describe('/api/tweet', async () => {
                     },
                 },
             });
+            await prisma.tweet_Likes.create({
+                data: {
+                    user: {
+                        connect: {
+                            id: test_user.id,
+                        }
+                    },
+                    tweet: {
+                        connect: {
+                            id: existingTweet.id,
+                        }
+                    }
+                },
+            });
         });
         beforeEach(async () => {
             sinon.createSandbox();
@@ -238,9 +279,10 @@ describe('/api/tweet', async () => {
         });
         after(async () => {
             await prisma.$transaction([
-                prisma.tweet.deleteMany(),
+                // the order is important as we have foreign key constraints
                 prisma.tweet_Likes.deleteMany(),
                 prisma.tweet_Comments.deleteMany(),
+                prisma.tweet.deleteMany(),
             ]);
         });
 
@@ -256,9 +298,10 @@ describe('/api/tweet', async () => {
                 },
             });
             chai.expect(res.status).to.equal(200);
-            chai.expect(res.body).to.have.property('id');
-            chai.expect(res.body).to.have.property('user_id');
-            chai.expect(res.body.likes_count).to.equal(1);
+            chai.expect(res.body.tweet).to.have.property('id');
+            chai.expect(res.body.tweet).to.have.property('user_id');
+            chai.expect(res.body.tweet.likes_count).to.equal(1);
+            chai.expect(res.body.deleted_like.count).to.equal(1);
             chai.expect(dislikedTweet).to.be.null;
         });
     });

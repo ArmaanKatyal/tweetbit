@@ -105,7 +105,19 @@ export const deleteTweet = async (req: Request, res: Response) => {
                 id: parseInt(tweetId, 10),
             },
         });
-        res.status(200).json(tweet);
+        // delete the likes
+        let deleted_tweet_likes = await prisma.tweet_Likes.deleteMany({
+            where: {
+                tweet_id: parseInt(tweetId, 10),
+            },
+        });
+        // delete the comments
+        let deleted_tweet_comments = await prisma.tweet_Comments.deleteMany({
+            where: {
+                tweet_id: parseInt(tweetId, 10),
+            },
+        });
+        res.status(200).json({ tweet, deleted_tweet_likes, deleted_tweet_comments });
         req.log.info({
             message: 'Tweet deleted',
             email,
@@ -114,34 +126,6 @@ export const deleteTweet = async (req: Request, res: Response) => {
     } catch (error: Error | any) {
         req.log.error({
             message: 'Error deleting tweet',
-            email,
-            uuid,
-        });
-        return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
-    }
-
-    try {
-        // delete the tweet likes and comments
-        await prisma.tweet_Likes.deleteMany({
-            where: {
-                tweet_id: parseInt(tweetId, 10),
-            },
-        });
-
-        await prisma.tweet_Comments.deleteMany({
-            where: {
-                tweet_id: parseInt(tweetId, 10),
-            },
-        });
-
-        req.log.info({
-            message: 'Tweet likes and comments deleted',
-            email,
-            uuid,
-        });
-    } catch (error: Error | any) {
-        req.log.error({
-            message: 'Error deleting tweet likes and comments',
             email,
             uuid,
         });
@@ -168,9 +152,24 @@ export const likeTweet = async (req: Request, res: Response) => {
             });
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
-
-        // TODO: check if the user has already liked the tweet. If yes, return an error
-
+        // check if the user has already liked the tweet
+        let ifTweetLiked = await prisma.tweet_Likes.count({
+            where: {
+                tweet_id: parseInt(tweetId, 10),
+                user_id: user_id!,
+            },
+        });
+        if (ifTweetLiked > 0) {
+            // if yes, return an error
+            req.log.error({
+                message: 'Tweet already liked',
+                email,
+                uuid,
+            });
+            return res
+                .status(400)
+                .json({ error: nodeConfig.get('error_codes.TWEET_ALREADY_LIKED') });
+        }
         // increment the tweet likes count
         let tweet = await prisma.tweet.update({
             where: {
@@ -209,6 +208,7 @@ export const likeTweet = async (req: Request, res: Response) => {
             message: 'Error liking tweet',
             email,
             uuid,
+            error
         });
         return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
     }
