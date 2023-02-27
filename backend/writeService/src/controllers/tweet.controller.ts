@@ -234,6 +234,23 @@ export const unlikeTweet = async (req: Request, res: Response) => {
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
 
+        // Not allowed to unlike a tweet if the user has not liked it
+        let ifTweetLiked = await prisma.tweet_Likes.count({
+            where: {
+                tweet_id: parseInt(tweetId, 10),
+                user_id: user_id!,
+            },
+        });
+
+        if (ifTweetLiked === 0) {
+            req.log.error({
+                message: 'Tweet not liked',
+                email,
+                uuid,
+            });
+            return res.status(400).json({ error: nodeConfig.get('error_codes.TWEET_NOT_LIKED') });
+        }
+
         // decrement the tweet likes count
         let tweet = await prisma.tweet.update({
             where: {
@@ -275,6 +292,7 @@ export const retweetTweet = async (req: Request, res: Response) => {
     let { email, uuid } = (req as any).token;
     let { tweetId } = req.params;
     try {
+        // check if the user exists
         let [userExists, user_id] = await checkIfUserExists(email);
         if (!userExists) {
             req.log.error({
@@ -285,9 +303,49 @@ export const retweetTweet = async (req: Request, res: Response) => {
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
 
-        // TODO: the creater of the original tweet should not be able to retweet his own tweet
-        // TODO: check if the user has already retweeted the tweet
+        // The creater of the original tweet should not be able to retweet his own tweet
+        let orignalTweet = await prisma.tweet.findFirst({
+            where: {
+                id: parseInt(tweetId, 10),
+            },
+        });
+        // check if the tweet exists
+        if (!orignalTweet) {
+            req.log.error({
+                message: 'Tweet not found',
+                email,
+                uuid,
+            });
+            return res.status(400).json({ error: nodeConfig.get('error_codes.TWEET_NOT_FOUND') });
+        }
 
+        if (orignalTweet.user_id === user_id) {
+            req.log.error({
+                message: 'User cannot retweet his own tweet',
+                email,
+                uuid,
+            });
+            return res.status(400).json({ error: nodeConfig.get('error_codes.TWEET_OWNER') });
+        }
+
+        // check if the user has already retweeted the tweet
+        let ifTweetRetweeted = await prisma.tweet.count({
+            where: {
+                user_id: user_id!,
+                content: orignalTweet.content,
+            },
+        });
+
+        if (ifTweetRetweeted > 0) {
+            req.log.error({
+                message: 'Tweet already retweeted',
+                email,
+                uuid,
+            });
+            return res
+                .status(400)
+                .json({ error: nodeConfig.get('error_codes.TWEET_ALREADY_RETWEETED') });
+        }
         // increase the retweet count of the original tweet
         let existingTweet = await prisma.tweet.update({
             where: {

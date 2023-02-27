@@ -291,6 +291,15 @@ describe('/api/tweet', async () => {
             chai.expect(res.body.deleted_like.count).to.equal(1);
             chai.expect(dislikedTweet).to.be.null;
         });
+
+        it('should not unlike a tweet if user has not liked it', async () => {
+            const res = await request(app)
+                .post(`/api/tweet/unlike/${existingTweet.id}`)
+                .set('Authorization', 'Bearer ' + test_token);
+            chai.expect(res.status).to.equal(400);
+            chai.expect(res.body).to.have.property('error');
+            chai.expect(res.body.error).to.equal(nodeConfig.get('error_codes.TWEET_NOT_LIKED'));
+        });
     });
 
     describe('[POST] /api/tweet/retweet/:tweetId', async () => {
@@ -356,11 +365,23 @@ describe('/api/tweet', async () => {
             chai.expect(retweetedTweet).to.not.be.null;
         });
 
-        it('should not retweet a tweet if user already retweeted it', async () => {
-            chai.expect(1).to.equal(1);
-        });
         it('should not retweet a tweet if user is the owner of the tweet', async () => {
-            chai.expect(1).to.equal(1);
+            const res = await request(app)
+                .post(`/api/tweet/retweet/${existingTweet.id}`)
+                .set('Authorization', 'Bearer ' + test_token);
+            chai.expect(res.status).to.equal(400);
+            chai.expect(res.body).to.have.property('error');
+            chai.expect(res.body.error).to.equal(nodeConfig.get('error_codes.TWEET_OWNER'));
+        });
+        it('should not retweet a tweet if user already retweeted it', async () => {
+            const res = await request(app)
+                .post(`/api/tweet/retweet/${existingTweet.id}`)
+                .set('Authorization', 'Bearer ' + test_token_2);
+            chai.expect(res.status).to.equal(400);
+            chai.expect(res.body).to.have.property('error');
+            chai.expect(res.body.error).to.equal(
+                nodeConfig.get('error_codes.TWEET_ALREADY_RETWEETED')
+            );
         });
     });
 
