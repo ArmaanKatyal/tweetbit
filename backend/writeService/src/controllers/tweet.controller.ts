@@ -43,14 +43,8 @@ export const createTweet = async (req: Request, res: Response) => {
         // contact the fanout service using gRPC
         tweetClient.createTweet(
             {
-                // TODO: Try if ...tweet works
-                id: tweet.id,
-                content: tweet.content,
-                userId: tweet.user_id,
-                uuid: tweet.uuid,
+                ...tweet,
                 createdAt: tweet.created_at.toString(),
-                likesCount: tweet.likes_count,
-                retweetsCount: tweet.retweets_count,
             },
             (err) => {
                 if (err) {
@@ -373,13 +367,8 @@ export const retweetTweet = async (req: Request, res: Response) => {
         // contact the fanout service using gRPC
         tweetClient.createTweet(
             {
-                id: newTweet.id,
-                content: newTweet.content,
-                userId: newTweet.user_id,
-                uuid: newTweet.uuid,
+                ...newTweet,
                 createdAt: newTweet.created_at.toString(),
-                likesCount: newTweet.likes_count,
-                retweetsCount: newTweet.retweets_count,
             },
             (err) => {
                 if (err) {

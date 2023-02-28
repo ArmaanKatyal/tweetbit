@@ -93,7 +93,7 @@ describe('/api/tweet', async () => {
             chai.expect(body.error).to.equal(nodeConfig.get('error_codes.USER_NOT_FOUND'));
         });
 
-        it('should create a tweet but grpc call fails', async () => {
+        it('should create a tweet even if grpc call fails', async () => {
             sinon.restore();
             // mock the createTweet function that throws an error
             sinon.mock(tweetClient).expects('createTweet').throws(new Error('some error'));

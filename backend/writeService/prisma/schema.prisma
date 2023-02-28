@@ -25,8 +25,8 @@ model User {
 
 model Tweet {
   id             Int   @id @default(autoincrement())
-  uuid           String @unique
-  user_id        Int  @unique
+  uuid           String
+  user_id        Int
   content        String
   created_at     DateTime @default(now())
   likes_count    Int      @default(0)
