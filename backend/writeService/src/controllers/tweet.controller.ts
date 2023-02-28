@@ -432,6 +432,9 @@ export const commentTweet = async (req: Request, res: Response) => {
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
 
+        // TODO: Check if the tweet exists
+        // TODO: Check if the user has already commented on the tweet
+
         // create a new comment
         let comment = await prisma.tweet_Comments.create({
             data: {

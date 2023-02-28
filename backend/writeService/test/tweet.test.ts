@@ -385,7 +385,47 @@ describe('/api/tweet', async () => {
         });
     });
 
-    describe('[POST] /api/tweet/comment/:tweetId', async () => {});
+    describe('[POST] /api/tweet/comment/:tweetId', async () => {
+        let existingTweet: any;
+        before(async () => {
+            existingTweet = await prisma.tweet.create({
+                data: {
+                    uuid: process.env.TEST_UUID!,
+                    content: 'TEST',
+                    user: {
+                        connect: {
+                            id: test_user.id,
+                        },
+                    },
+                }
+            });
+        });
+        beforeEach(async () => {
+            sinon.createSandbox();
+            // mock the createTweet function
+            // sinon.mock(tweetClient).expects('createTweet').returns({});
+        });
+        afterEach(async () => {
+            sinon.restore();
+        });
+        after(async () => {
+            await prisma.$transaction([
+                // the order is important as we have foreign key constraints
+                prisma.tweet_Likes.deleteMany(),
+                prisma.tweet_Comments.deleteMany(),
+                prisma.tweet.deleteMany(),
+            ]);
+        });
+
+        it('should comment on a tweet', async () => {
+            const res = await request(app).post(`/api/tweet/comment/${existingTweet.id}`).send({
+                content: 'test comment',
+            }).set('Authorization', 'Bearer ' + test_token);
+            chai.expect(res.status).to.equal(200);
+            chai.expect(res.body.tweet_id).to.equal(existingTweet.id);
+            chai.expect(res.body.user_id).to.equal(test_user.id);
+        });
+    });
 
     describe('helper/verify_user', () => {
         it('should return true and the user id', async () => {
