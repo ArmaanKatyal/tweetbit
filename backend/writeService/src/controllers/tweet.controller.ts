@@ -432,8 +432,39 @@ export const commentTweet = async (req: Request, res: Response) => {
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
 
-        // TODO: Check if the tweet exists
-        // TODO: Check if the user has already commented on the tweet
+        // Check if the tweet exists
+        let ifTweetExists = await prisma.tweet.findFirst({
+            where: {
+                id: parseInt(tweetId, 10),
+            },
+        });
+        if (!ifTweetExists) {
+            req.log.error({
+                message: 'Tweet not found',
+                email,
+                uuid,
+            });
+            return res.status(400).json({ error: nodeConfig.get('error_codes.TWEET_NOT_FOUND') });
+        }
+
+        // Check if the user has already commented on the tweet
+        let ifUserCommented = await prisma.tweet_Comments.findFirst({
+            where: {
+                tweet_id: parseInt(tweetId, 10),
+                user_id: user_id!,
+            },
+        });
+
+        if (ifUserCommented) {
+            req.log.error({
+                message: 'User already commented on the tweet',
+                email,
+                uuid,
+            });
+            return res
+                .status(400)
+                .json({ error: nodeConfig.get('error_codes.USER_ALREADY_COMMENTED') });
+        }
 
         // create a new comment
         let comment = await prisma.tweet_Comments.create({

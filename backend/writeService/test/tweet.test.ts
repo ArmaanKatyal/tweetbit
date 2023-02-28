@@ -45,7 +45,7 @@ describe('/api/tweet', async () => {
             },
         });
     });
-    describe('[POST] /api/tweet/create', () => {
+    describe('[POST] /create', () => {
         beforeEach(async () => {
             sinon.createSandbox();
             // mock the createTweet function
@@ -397,7 +397,7 @@ describe('/api/tweet', async () => {
                             id: test_user.id,
                         },
                     },
-                }
+                },
             });
         });
         beforeEach(async () => {
@@ -418,12 +418,41 @@ describe('/api/tweet', async () => {
         });
 
         it('should comment on a tweet', async () => {
-            const res = await request(app).post(`/api/tweet/comment/${existingTweet.id}`).send({
-                content: 'test comment',
-            }).set('Authorization', 'Bearer ' + test_token);
+            const res = await request(app)
+                .post(`/api/tweet/comment/${existingTweet.id}`)
+                .send({
+                    content: 'test comment',
+                })
+                .set('Authorization', 'Bearer ' + test_token);
             chai.expect(res.status).to.equal(200);
             chai.expect(res.body.tweet_id).to.equal(existingTweet.id);
             chai.expect(res.body.user_id).to.equal(test_user.id);
+        });
+
+        it('cannot comment as the tweet does not exist', async () => {
+            const res = await request(app)
+                .post(`/api/tweet/comment/123456789`)
+                .send({
+                    content: 'test comment',
+                })
+                .set('Authorization', 'Bearer ' + test_token);
+            chai.expect(res.status).to.equal(400);
+            chai.expect(res.body).to.have.property('error');
+            chai.expect(res.body.error).to.equal(nodeConfig.get('error_codes.TWEET_NOT_FOUND'));
+        });
+
+        it('should not allowed to recomment on a tweet', async () => {
+            const res = await request(app)
+                .post(`/api/tweet/comment/${existingTweet.id}`)
+                .send({
+                    content: 'test comment',
+                })
+                .set('Authorization', 'Bearer ' + test_token);
+            chai.expect(res.status).to.equal(400);
+            chai.expect(res.body).to.have.property('error');
+            chai.expect(res.body.error).to.equal(
+                nodeConfig.get('error_codes.USER_ALREADY_COMMENTED')
+            );
         });
     });
 

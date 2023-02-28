@@ -12,7 +12,13 @@
         "TOKEN_EXPIRED": 5,
         "TOKEN_NOT_FOUND": 6,
         "INTERNAL_SERVER_ERROR": 7,
-        "UNAUTHORIZED": 8
+        "UNAUTHORIZED": 8,
+        "TWEET_ALREADY_LIKED": 9,
+        "TWEET_ALREADY_RETWEETED": 10,
+        "TWEET_OWNER": 11,
+        "TWEET_NOT_FOUND": 12,
+        "TWEET_NOT_LIKED": 13,
+        "USER_ALREADY_COMMENTED": 14
     },
     "token": {
         "expire": {
