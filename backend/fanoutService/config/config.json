@@ -2,5 +2,11 @@
     "server": {
         "port": ":3002",
         "host": "localhost"
+    },
+    "userGraphService": {
+        "port": "localhost:3003"
+    },
+    "featureFlag": {
+        "enableUserGraph": "true"
     }
 }

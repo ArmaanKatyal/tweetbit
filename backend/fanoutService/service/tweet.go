@@ -1,16 +1,17 @@
-package helpers
+package service
 
 import (
 	"context"
 	"log"
 	"net"
 
+	"github.com/ArmaanKatyal/tweetbit/backend/fanoutService/helpers"
 	pb "github.com/ArmaanKatyal/tweetbit/backend/fanoutService/proto"
 	"google.golang.org/grpc"
 )
 
 var (
-	PORT = GetConfigValue("server.port")
+	PORT = helpers.GetConfigValue("server.port")
 )
 
 type FanoutServer struct {
@@ -36,5 +37,8 @@ func (server *FanoutServer) Run() error {
 
 func (sever *FanoutServer) CreateTweet(_ context.Context, in *pb.CreateTweetRequest) (*pb.CreateTweetResponse, error) {
 	log.Printf("Received: %v", in.String())
+	if helpers.StringToBool(helpers.GetConfigValue("featureFlag.enableUserGraph")) {
+		go GetFollowers(User{in.GetId(), in.GetUuid()})
+	}
 	return &pb.CreateTweetResponse{}, nil
 }
