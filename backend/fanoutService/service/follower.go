@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"log"
-	"strconv"
 	"time"
 
 	"github.com/ArmaanKatyal/tweetbit/backend/fanoutService/helpers"
@@ -17,7 +16,7 @@ type User struct {
 	uuid string
 }
 
-func GetFollowers(user User) []User {
+func GetFollowers(user User, followers chan []*pb.User) {
 	conn, err := grpc.Dial(helpers.GetConfigValue("userGraphService.port"), grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
@@ -40,10 +39,5 @@ func GetFollowers(user User) []User {
 		log.Fatalf("could not greet: %v", err)
 	}
 
-	var followers []User
-	for _, follower := range r.Users {
-		followers = append(followers, User{strconv.Itoa(int(follower.Id)), follower.Uuid})
-	}
-
-	return followers
+	followers <- r.Users
 }

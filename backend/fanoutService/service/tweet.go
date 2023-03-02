@@ -37,8 +37,12 @@ func (server *FanoutServer) Run() error {
 
 func (sever *FanoutServer) CreateTweet(_ context.Context, in *pb.CreateTweetRequest) (*pb.CreateTweetResponse, error) {
 	log.Printf("Received: %v", in.String())
+	followers := make(chan []*pb.User)
 	if helpers.StringToBool(helpers.GetConfigValue("featureFlag.enableUserGraph")) {
-		go GetFollowers(User{in.GetId(), in.GetUuid()})
+		// make a concurrent call to user graph service
+		go GetFollowers(User{in.GetId(), in.GetUuid()}, followers)
+		// TODO: goRoutine to store tweet in memory timeline for each follower
+		// TODO: goRoutine to send tweet to ActiveMQ
 	}
 	return &pb.CreateTweetResponse{}, nil
 }
