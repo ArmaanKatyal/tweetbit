@@ -6,7 +6,17 @@
     "userGraphService": {
         "port": "localhost:3003"
     },
+    "kafka": {
+        "bootstrap": {
+            "servers":"localhost:9092"
+        },
+        "client": {
+            "id": "user-graph-service"
+        },
+        "acks": "all"
+    },
     "featureFlag": {
-        "enableUserGraph": "true"
+        "enableKafka": "true",
+        "enableCreateTweet": "true"
     }
 }
