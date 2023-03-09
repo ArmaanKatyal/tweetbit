@@ -23,6 +23,7 @@ func NewFanoutServer() *FanoutServer {
 	return &FanoutServer{}
 }
 
+// Run the server
 func (server *FanoutServer) Run() error {
 	lis, err := net.Listen("tcp", PORT)
 	if err != nil {
@@ -46,10 +47,11 @@ func NewTweetPlacer(p *kafka.Producer, t string) *TweetPlacer {
 	return &TweetPlacer{
 		producer:      p,
 		topic:         t,
-		delivery_chan: make(chan kafka.Event, 10000),
+		delivery_chan: make(chan kafka.Event),
 	}
 }
 
+// PlaceTweet places a tweet in the kafka topic
 func (op *TweetPlacer) PlaceTweet(tweet *pb.CreateTweetRequest) error {
 	value := tweet.GetId() + "|" + tweet.GetUuid() + "|" + tweet.GetContent()
 	err := op.producer.Produce(&kafka.Message{
