@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net"
 
@@ -51,12 +52,26 @@ func NewTweetPlacer(p *kafka.Producer, t string) *TweetPlacer {
 	}
 }
 
+type TweetI struct {
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Content       string `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
+	UserId        string `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Uuid          string `protobuf:"bytes,4,opt,name=uuid,proto3" json:"uuid,omitempty"`
+	CreatedAt     string `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	LikesCount    int32  `protobuf:"varint,6,opt,name=likes_count,json=likesCount,proto3" json:"likes_count,omitempty"`
+	RetweetsCount int32  `protobuf:"varint,7,opt,name=retweets_count,json=retweetsCount,proto3" json:"retweets_count,omitempty"`
+}
+
 // PlaceTweet places a tweet in the kafka topic
 func (op *TweetPlacer) PlaceTweet(tweet *pb.CreateTweetRequest) error {
-	value := tweet.GetId() + "|" + tweet.GetUuid() + "|" + tweet.GetContent()
-	err := op.producer.Produce(&kafka.Message{
+	value := &TweetI{tweet.Id, tweet.Content, tweet.UserId, tweet.Uuid, tweet.CreatedAt, tweet.LikesCount, tweet.RetweetsCount}
+	jsonValue, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+	err = op.producer.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &op.topic, Partition: kafka.PartitionAny},
-		Value:          []byte(value),
+		Value:          []byte(jsonValue),
 	}, op.delivery_chan)
 	if err != nil {
 		return err
