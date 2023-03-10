@@ -52,7 +52,7 @@ func NewTweetPlacer(p *kafka.Producer, t string) *TweetPlacer {
 	}
 }
 
-type TweetI struct {
+type ITweet struct {
 	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Content       string `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
 	UserId        string `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
@@ -64,7 +64,7 @@ type TweetI struct {
 
 // PlaceTweet places a tweet in the kafka topic
 func (op *TweetPlacer) PlaceTweet(tweet *pb.CreateTweetRequest) error {
-	value := &TweetI{tweet.Id, tweet.Content, tweet.UserId, tweet.Uuid, tweet.CreatedAt, tweet.LikesCount, tweet.RetweetsCount}
+	value := &ITweet{tweet.Id, tweet.Content, tweet.UserId, tweet.Uuid, tweet.CreatedAt, tweet.LikesCount, tweet.RetweetsCount}
 	jsonValue, err := json.Marshal(value)
 	if err != nil {
 		return err
