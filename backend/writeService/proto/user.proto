@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package fanout;
+
+message FollowUserRequest {
+    string user_id = 1;
+    string follower_id = 2;
+}
+
+message FollowUserResponse {
+    bool success = 1;
+}
+
+service UserService {
+    rpc FollowUser (FollowUserRequest) returns (FollowUserResponse) {}
+}
