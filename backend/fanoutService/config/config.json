@@ -17,6 +17,7 @@
     },
     "featureFlag": {
         "enableKafka": "true",
-        "enableCreateTweet": "true"
+        "enableCreateTweet": "true",
+        "enableFollowUser": "true"
     }
 }
