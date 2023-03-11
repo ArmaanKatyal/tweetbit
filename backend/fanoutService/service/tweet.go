@@ -4,53 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"log"
-	"net"
 
 	"github.com/ArmaanKatyal/tweetbit/backend/fanoutService/helpers"
 	pb "github.com/ArmaanKatyal/tweetbit/backend/fanoutService/proto"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"google.golang.org/grpc"
 )
-
-var (
-	PORT = helpers.GetConfigValue("server.port")
-)
-
-type FanoutServer struct {
-	pb.UnimplementedTweetServiceServer
-}
-
-func NewFanoutServer() *FanoutServer {
-	return &FanoutServer{}
-}
-
-// Run the server
-func (server *FanoutServer) Run() error {
-	lis, err := net.Listen("tcp", PORT)
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-
-	s := grpc.NewServer()
-
-	pb.RegisterTweetServiceServer(s, server)
-	log.Printf("Server listening on port %s", PORT)
-	return s.Serve(lis)
-}
-
-type TweetPlacer struct {
-	producer      *kafka.Producer
-	topic         string
-	delivery_chan chan kafka.Event
-}
-
-func NewTweetPlacer(p *kafka.Producer, t string) *TweetPlacer {
-	return &TweetPlacer{
-		producer:      p,
-		topic:         t,
-		delivery_chan: make(chan kafka.Event),
-	}
-}
 
 type ITweet struct {
 	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -62,32 +20,8 @@ type ITweet struct {
 	RetweetsCount int32  `protobuf:"varint,7,opt,name=retweets_count,json=retweetsCount,proto3" json:"retweets_count,omitempty"`
 }
 
-// PlaceTweet places a tweet in the kafka topic
-func (op *TweetPlacer) PlaceTweet(tweet *pb.CreateTweetRequest) error {
-	value := &ITweet{tweet.Id, tweet.Content, tweet.UserId, tweet.Uuid, tweet.CreatedAt, tweet.LikesCount, tweet.RetweetsCount}
-	jsonValue, err := json.Marshal(value)
-	if err != nil {
-		return err
-	}
-	err = op.producer.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &op.topic, Partition: kafka.PartitionAny},
-		Value:          []byte(jsonValue),
-	}, op.delivery_chan)
-	if err != nil {
-		return err
-	}
-
-	e := <-op.delivery_chan
-	m := e.(*kafka.Message)
-
-	if m.TopicPartition.Error != nil {
-		return m.TopicPartition.Error
-	}
-	return nil
-}
-
-func (sever *FanoutServer) CreateTweet(_ context.Context, in *pb.CreateTweetRequest) (*pb.CreateTweetResponse, error) {
-	log.Printf("Received: %v", in.String())
+func (sever *FanoutServer) CreateTweet(_ context.Context, req *pb.CreateTweetRequest) (*pb.CreateTweetResponse, error) {
+	log.Printf("Received: %v", req.String())
 	// followers := make(chan []*pb.User)
 	if helpers.StringToBool(helpers.GetConfigValue("featureFlag.enableKafka")) && helpers.StringToBool(helpers.GetConfigValue("featureFlag.enableCreateTweet")) {
 		// make a concurrent call to user graph service
@@ -103,8 +37,13 @@ func (sever *FanoutServer) CreateTweet(_ context.Context, in *pb.CreateTweetRequ
 				log.Fatalf("failed to create producer: %s", err)
 			}
 			topic := "createTweet"
-			op := NewTweetPlacer(p, topic)
-			if err = op.PlaceTweet(in); err != nil {
+			op := NewKafka(p, topic)
+			value := &ITweet{req.Id, req.Content, req.UserId, req.Uuid, req.CreatedAt, req.LikesCount, req.RetweetsCount}
+			jsonValue, err := json.Marshal(value)
+			if err != nil {
+				log.Fatalf("failed to marshal tweet: %s", err)
+			}
+			if err = op.PublishMessage(jsonValue); err != nil {
 				log.Fatalf("failed to place tweet: %s", err)
 			}
 		}()
