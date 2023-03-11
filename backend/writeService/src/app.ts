@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import { Server, ServerCredentials } from '@grpc/grpc-js';
 import nodeConfig from 'config';
 import { tweetRouter } from './routes/tweet.route';
+import { followRouter } from './routes/follower.route';
 import expressPino from 'express-pino-logger';
 import pinoHttp from 'pino-http';
 import logger from './utils/log.util';
@@ -45,10 +46,11 @@ if (process.env.NODE_ENV !== 'test') {
     });
 }
 
-app.get('/', (req: Request, res: Response, next: NextFunction) => {
+app.get('/', (req: Request, res: Response) => {
     res.status(200).json({ message: 'Hello World' });
 });
 
 app.use('/api/tweet', tweetRouter);
+app.use('/api/user', followRouter);
 
 export { app };

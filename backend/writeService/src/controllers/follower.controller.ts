@@ -1,15 +1,15 @@
 import { Request, Response } from 'express';
 import { checkIfUserExists } from '../helpers/verifyUser.helper';
 import nodeConfig from 'config';
-import prisma from '../client';
+import prisma from '../../prisma/client';
 import { userClient } from '../services/user.service';
 
 export const followUser = async (req: Request, res: Response) => {
     let { email, uuid } = (req as any).token;
-    let { userToFollowId } = req.params;
+    let { userToFollowEmail } = req.params;
     try {
         let [userExists, user_id] = await checkIfUserExists(email);
-        if (userExists) {
+        if (!userExists) {
             req.log.error({
                 message: 'User not found',
                 email,
@@ -18,9 +18,19 @@ export const followUser = async (req: Request, res: Response) => {
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
 
+        let [userToFollowExists, userToFollowId] = await checkIfUserExists(userToFollowEmail);
+        if (!userToFollowExists) {
+            req.log.error({
+                message: 'User to follow not found',
+                email,
+                uuid,
+            });
+            return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
+        }
+
         let userWithIncreasedFollowerCount = await prisma.user.update({
             where: {
-                id: Number(userToFollowId),
+                id: userToFollowId!,
             },
             data: {
                 followers_count: {
@@ -45,7 +55,7 @@ export const followUser = async (req: Request, res: Response) => {
                 user_id: user_id!,
                 follower: {
                     connect: {
-                        id: Number(userToFollowId),
+                        id: userToFollowId!,
                     },
                 },
             },
@@ -54,7 +64,7 @@ export const followUser = async (req: Request, res: Response) => {
         userClient.FollowUser(
             {
                 userId: user_id!.toString(),
-                followerId: userToFollowId,
+                followerId: userToFollowEmail,
             },
             (error) => {
                 if (error) {
@@ -89,3 +99,5 @@ export const followUser = async (req: Request, res: Response) => {
         return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
     }
 };
+
+export const unfollowUser = async (req: Request, res: Response) => {};
