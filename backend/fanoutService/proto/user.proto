@@ -15,4 +15,5 @@ message FollowUserResponse {
 
 service UserService {
     rpc FollowUser (FollowUserRequest) returns (FollowUserResponse) {}
+    rpc UnfollowUser (FollowUserRequest) returns (FollowUserResponse) {}
 }

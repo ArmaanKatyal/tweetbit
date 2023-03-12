@@ -27,7 +27,7 @@ func GetConfigValue(key string) string {
 	}
 	value, ok := viper.Get(key).(string)
 	if !ok {
-		panic("Invalid type assertion")
+		return "NO_VALUE_FOUND"
 	}
 	return value
 }
