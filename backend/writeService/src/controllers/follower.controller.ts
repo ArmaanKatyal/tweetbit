@@ -4,10 +4,14 @@ import nodeConfig from 'config';
 import prisma from '../../prisma/client';
 import { userClient } from '../services/user.service';
 
+/**
+ * follow the user with the given email
+ * @param req {Request} {params: {userEmail: string}
+ * @param res {Response}
+ */
 export const followUser = async (req: Request, res: Response) => {
     let { email, uuid } = (req as any).token;
     let { userEmail: userToFollowEmail } = req.params;
-    console.log(userToFollowEmail);
     try {
         let [userExists, user_id] = await checkIfUserExists(email);
         if (!userExists) {
@@ -29,6 +33,7 @@ export const followUser = async (req: Request, res: Response) => {
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
 
+        // Increase the follower count
         let userWithIncreasedFollowerCount = await prisma.user.update({
             where: {
                 id: userToFollowId!,
@@ -40,6 +45,7 @@ export const followUser = async (req: Request, res: Response) => {
             },
         });
 
+        // Increase the following count
         let followerWithIncreasedFollowingCount = await prisma.user.update({
             where: {
                 id: user_id!,
@@ -51,6 +57,7 @@ export const followUser = async (req: Request, res: Response) => {
             },
         });
 
+        // create a new follower in the database
         let newFollower = await prisma.user_Followers.create({
             data: {
                 user_id: userToFollowId!,
@@ -62,6 +69,7 @@ export const followUser = async (req: Request, res: Response) => {
             },
         });
 
+        // Contact the fanout service
         userClient.FollowUser(
             {
                 userId: user_id!.toString(),
@@ -101,6 +109,11 @@ export const followUser = async (req: Request, res: Response) => {
     }
 };
 
+/**
+ * unfollow the user with the given email
+ * @param req {Request} {params: {userEmail: string}}
+ * @param res {Response}
+ */
 export const unfollowUser = async (req: Request, res: Response) => {
     let { email, uuid } = (req as any).token;
     let { userEmail: userToUnfollowEmail } = req.params;
