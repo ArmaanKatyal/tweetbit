@@ -38,8 +38,8 @@ model Tweet {
 
 model User_Followers {
   id          Int @id @default(autoincrement())
-  user_id     Int @unique
-  follower_id Int @unique
+  user_id     Int 
+  follower_id Int 
   follower    User   @relation(fields: [follower_id], references: [id])
 }
 

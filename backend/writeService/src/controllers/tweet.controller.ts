@@ -44,6 +44,9 @@ export const createTweet = async (req: Request, res: Response) => {
         tweetClient.createTweet(
             {
                 ...tweet,
+                id: tweet.id.toString(),
+                likesCount: tweet.likes_count.toString(),
+                retweetsCount: tweet.retweets_count.toString(),
                 createdAt: tweet.created_at.toString(),
             },
             (err) => {
@@ -368,6 +371,9 @@ export const retweetTweet = async (req: Request, res: Response) => {
         tweetClient.createTweet(
             {
                 ...newTweet,
+                id: newTweet.id.toString(),
+                likesCount: newTweet.likes_count.toString(),
+                retweetsCount: newTweet.retweets_count.toString(),
                 createdAt: newTweet.created_at.toString(),
             },
             (err) => {

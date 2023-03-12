@@ -4,7 +4,7 @@ import { followUser, unfollowUser } from '../controllers/follower.controller';
 
 const router = express.Router();
 
-router.post('/follow/:userToFollowEmail', verifyToken, followUser);
-router.post('/unfollow/:userToFollowEmail', verifyToken, unfollowUser);
+router.post('/follow/:userEmail', verifyToken, followUser);
+router.post('/unfollow/:userEmail', verifyToken, unfollowUser);
 
 export { router as followRouter };

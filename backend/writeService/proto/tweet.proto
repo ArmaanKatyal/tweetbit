@@ -7,13 +7,13 @@ service TweetService {
 }
 
 message CreateTweetRequest {
-    int32 id = 1;
+    string id = 1;
     string content = 2;
-    int32 user_id = 3;
+    string user_id = 3;
     string uuid = 4;
     string created_at = 5;
-    int32 likes_count = 6;
-    int32 retweets_count = 7;
+    string likes_count = 6;
+    string retweets_count = 7;
 }
 
 message CreateTweetResponse {}

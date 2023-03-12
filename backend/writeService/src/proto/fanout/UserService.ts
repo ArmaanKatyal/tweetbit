@@ -52,14 +52,66 @@ export interface UserServiceClient extends grpc.Client {
         argument: _fanout_FollowUserRequest,
         callback: grpc.requestCallback<_fanout_FollowUserResponse__Output>
     ): grpc.ClientUnaryCall;
+
+    UnfollowUser(
+        argument: _fanout_FollowUserRequest,
+        metadata: grpc.Metadata,
+        options: grpc.CallOptions,
+        callback: grpc.requestCallback<_fanout_FollowUserResponse__Output>
+    ): grpc.ClientUnaryCall;
+    UnfollowUser(
+        argument: _fanout_FollowUserRequest,
+        metadata: grpc.Metadata,
+        callback: grpc.requestCallback<_fanout_FollowUserResponse__Output>
+    ): grpc.ClientUnaryCall;
+    UnfollowUser(
+        argument: _fanout_FollowUserRequest,
+        options: grpc.CallOptions,
+        callback: grpc.requestCallback<_fanout_FollowUserResponse__Output>
+    ): grpc.ClientUnaryCall;
+    UnfollowUser(
+        argument: _fanout_FollowUserRequest,
+        callback: grpc.requestCallback<_fanout_FollowUserResponse__Output>
+    ): grpc.ClientUnaryCall;
+    unfollowUser(
+        argument: _fanout_FollowUserRequest,
+        metadata: grpc.Metadata,
+        options: grpc.CallOptions,
+        callback: grpc.requestCallback<_fanout_FollowUserResponse__Output>
+    ): grpc.ClientUnaryCall;
+    unfollowUser(
+        argument: _fanout_FollowUserRequest,
+        metadata: grpc.Metadata,
+        callback: grpc.requestCallback<_fanout_FollowUserResponse__Output>
+    ): grpc.ClientUnaryCall;
+    unfollowUser(
+        argument: _fanout_FollowUserRequest,
+        options: grpc.CallOptions,
+        callback: grpc.requestCallback<_fanout_FollowUserResponse__Output>
+    ): grpc.ClientUnaryCall;
+    unfollowUser(
+        argument: _fanout_FollowUserRequest,
+        callback: grpc.requestCallback<_fanout_FollowUserResponse__Output>
+    ): grpc.ClientUnaryCall;
 }
 
 export interface UserServiceHandlers extends grpc.UntypedServiceImplementation {
     FollowUser: grpc.handleUnaryCall<_fanout_FollowUserRequest__Output, _fanout_FollowUserResponse>;
+
+    UnfollowUser: grpc.handleUnaryCall<
+        _fanout_FollowUserRequest__Output,
+        _fanout_FollowUserResponse
+    >;
 }
 
 export interface UserServiceDefinition extends grpc.ServiceDefinition {
     FollowUser: MethodDefinition<
+        _fanout_FollowUserRequest,
+        _fanout_FollowUserResponse,
+        _fanout_FollowUserRequest__Output,
+        _fanout_FollowUserResponse__Output
+    >;
+    UnfollowUser: MethodDefinition<
         _fanout_FollowUserRequest,
         _fanout_FollowUserResponse,
         _fanout_FollowUserRequest__Output,

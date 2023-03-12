@@ -1,21 +1,21 @@
 // Original file: proto/tweet.proto
 
 export interface CreateTweetRequest {
-    id?: number;
+    id?: string;
     content?: string;
-    userId?: number;
+    userId?: string;
     uuid?: string;
     createdAt?: string;
-    likesCount?: number;
-    retweetsCount?: number;
+    likesCount?: string;
+    retweetsCount?: string;
 }
 
 export interface CreateTweetRequest__Output {
-    id?: number;
+    id?: string;
     content?: string;
-    userId?: number;
+    userId?: string;
     uuid?: string;
     createdAt?: string;
-    likesCount?: number;
-    retweetsCount?: number;
+    likesCount?: string;
+    retweetsCount?: string;
 }
