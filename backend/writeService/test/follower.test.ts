@@ -5,6 +5,7 @@ import { userClient } from '../src/services/user.service';
 import dotenv from 'dotenv';
 import request from 'supertest';
 import { PrismaClient } from '@prisma/client';
+import { checkIfUserExists } from '../src/helpers/verifyUser.helper';
 
 declare global {
     namespace NodeJS {
@@ -67,5 +68,41 @@ describe('/api/user', async () => {
         });
     });
 
-    describe('[POST] /unfollow/:userEmail', () => {});
+    describe('[POST] /unfollow/:userEmail', () => {
+        before(async () => {
+            let [_, user_id] = await checkIfUserExists(userEmail);
+            await prisma.user_Followers.create({
+                data: {
+                    follower: {
+                        connect: {
+                            id: test_user.id,
+                        },
+                    },
+                    user_id: user_id!,
+                }
+            })
+        })
+        beforeEach(() => {
+            sinon.createSandbox();
+            // mock the followUser function
+            sinon.mock(userClient).expects('UnfollowUser').returns({Success: true});
+        });
+        afterEach(() => {
+            sinon.restore();
+        });
+        after(async () => {
+            await prisma.$transaction([
+                prisma.user_Followers.deleteMany(),
+            ]);
+        });
+        it('should unfollow the user with the given email', async () => {
+            const {status, body} = await request(app).post(`/api/user/unfollow/${userEmail}`).set(
+                'Authorization', 'Bearer ' + test_token
+            )
+            chai.expect(status).to.equal(200);
+            chai.expect(body).to.have.property('deletedFollower');
+            chai.expect(body).to.have.property('user');
+            chai.expect(body).to.have.property('user_unfollowed');
+        });
+    });
 });
