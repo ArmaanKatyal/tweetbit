@@ -5,10 +5,21 @@ import (
 
 	"github.com/ArmaanKatyal/tweetbit/backend/userGraphService/constants"
 	"github.com/ArmaanKatyal/tweetbit/backend/userGraphService/services"
+	"github.com/ArmaanKatyal/tweetbit/backend/userGraphService/utils"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
 func main() {
+	rediserver := utils.NewRedisServer()
+	defer func() {
+		err := rediserver.Close()
+		if err != nil {
+			log.Printf("Error: %v\n", err)
+		}
+	}()
+
+	client := rediserver.GetClient()
+
 	topics := []string{constants.CreateTweetTopic, constants.FollowUserTopic, constants.UnfollowUserTopic}
 	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": constants.KafkaServer,
@@ -30,11 +41,11 @@ func main() {
 		case *kafka.Message:
 			switch *e.TopicPartition.Topic {
 			case constants.CreateTweetTopic:
-				go services.HandleCreateTweet(e)
+				go services.HandleCreateTweet(e, client)
 			case constants.FollowUserTopic:
-				go services.HandleFollowUser(e)
+				go services.HandleFollowUser(e, client)
 			case constants.UnfollowUserTopic:
-				go services.HandleUnfollowUser(e)
+				go services.HandleUnfollowUser(e, client)
 			}
 		case *kafka.Error:
 			// TOOD: handle the error properly and log it
