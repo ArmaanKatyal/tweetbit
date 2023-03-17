@@ -60,10 +60,10 @@ export const followUser = async (req: Request, res: Response) => {
         // create a new follower in the database
         let newFollower = await prisma.user_Followers.create({
             data: {
-                user_id: userToFollowId!,
+                user_id: userWithIncreasedFollowerCount.id,
                 follower: {
                     connect: {
-                        id: user_id!,
+                        id: followerWithIncreasedFollowingCount.id,
                     },
                 },
             },
@@ -72,8 +72,8 @@ export const followUser = async (req: Request, res: Response) => {
         // Contact the fanout service
         userClient.FollowUser(
             {
-                userId: user_id!.toString(),
-                followerId: userToFollowId!.toString(),
+                userId: userWithIncreasedFollowerCount.id.toString(),
+                followerId: followerWithIncreasedFollowingCount.id.toString(),
             },
             (error) => {
                 if (error) {
