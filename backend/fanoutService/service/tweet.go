@@ -21,11 +21,9 @@ type ITweet struct {
 }
 
 func (sever *FanoutServer) CreateTweet(_ context.Context, req *pb.CreateTweetRequest) (*pb.CreateTweetResponse, error) {
-	log.Printf("Received: %v", req.String())
+	log.Printf("CreateTweet: %v", req.String())
 	// followers := make(chan []*pb.User)
 	if helpers.StringToBool(helpers.GetConfigValue("featureFlag.enableKafka")) && helpers.StringToBool(helpers.GetConfigValue("featureFlag.enableCreateTweet")) {
-		// make a concurrent call to user graph service
-		// go GetFollowers(User{in.GetId(), in.GetUuid()}, followers)
 		go func() {
 			// publish the tweet to kafka to be consumed by other services
 			p, err := kafka.NewProducer(&kafka.ConfigMap{

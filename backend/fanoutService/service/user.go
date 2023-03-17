@@ -16,7 +16,7 @@ type IFollowUser struct {
 }
 
 func (server *FanoutServer) FollowUser(ctx context.Context, req *pb.FollowUserRequest) (*pb.FollowUserResponse, error) {
-	log.Printf("Received: %v", req.String())
+	log.Printf("FollowUser: %v", req.String())
 
 	if helpers.StringToBool(helpers.GetConfigValue("featureFlag.enableKafka")) && helpers.StringToBool(helpers.GetConfigValue("featureFlag.enableFollowUser")) {
 		// publish to kafka
@@ -45,7 +45,7 @@ func (server *FanoutServer) FollowUser(ctx context.Context, req *pb.FollowUserRe
 }
 
 func (server *FanoutServer) UnfollowUser(ctx context.Context, req *pb.FollowUserRequest) (*pb.FollowUserResponse, error) {
-	log.Printf("Received: %v", req.String())
+	log.Printf("UnFollowUser: %v", req.String())
 
 	if helpers.StringToBool(helpers.GetConfigValue("featureFlag.enableKafka")) && helpers.StringToBool(helpers.GetConfigValue("featureFlag.enableUnfollowUser")) {
 		go func() {
