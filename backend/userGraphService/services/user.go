@@ -10,6 +10,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// Add the follower to the user's follower list
 func HandleFollowUser(message *kafka.Message, rdb *redis.Client) {
 	// destructure the incoming message
 	var jsonMessage models.IFollowUser
@@ -27,6 +28,7 @@ func HandleFollowUser(message *kafka.Message, rdb *redis.Client) {
 	log.Printf("Follow User: %s\n", message.Value)
 }
 
+// Unfollow a user and remove the user from the follower list of the user
 func HandleUnfollowUser(message *kafka.Message, rdb *redis.Client) {
 	// destructure the incoming message
 	var jsonMessage models.IFollowUser
@@ -42,4 +44,13 @@ func HandleUnfollowUser(message *kafka.Message, rdb *redis.Client) {
 	}
 
 	log.Printf("Unfollow User: %s\n", message.Value)
+}
+
+// Get all the followers of a user from redis
+func GetAllUserFollowers(userId string, rdb *redis.Client) ([]string, error) {
+	followers, err := rdb.SMembers(context.Background(), userId).Result()
+	if err != nil {
+		return nil, err
+	}
+	return followers, nil
 }
