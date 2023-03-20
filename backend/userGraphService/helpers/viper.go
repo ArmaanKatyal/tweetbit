@@ -18,9 +18,10 @@ func GetEnvValue(key string) string {
 
 // returns the value of the config variable
 func GetConfigValue(key string) string {
-	viper.AddConfigPath("./config")
 	viper.SetConfigName("config")
 	viper.SetConfigType("json")
+	viper.AddConfigPath(".")
+	viper.AddConfigPath("..")
 	err := viper.ReadInConfig()
 	if err != nil {
 		panic(err)
