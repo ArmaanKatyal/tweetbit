@@ -2,20 +2,39 @@ package utils
 
 import (
 	"testing"
+
+	"github.com/alicebob/miniredis/v2"
+	"github.com/stretchr/testify/assert"
 )
 
+var redisServer *miniredis.Miniredis
+
+func mockRedis() *miniredis.Miniredis {
+	s, err := miniredis.Run()
+	if err != nil {
+		panic(err)
+	}
+	return s
+}
+
+func setup() {
+	redisServer = mockRedis()
+}
+
+func teardown() {
+	redisServer.Close()
+}
+
 func TestNewRedisServer(t *testing.T) {
+	setup()
+	defer teardown()
 	tests := []struct {
 		name string
 		port string
 	}{
 		{
 			name: "TestNewRedisServer: port",
-			port: "localhost:6379",
-		},
-		{
-			name: "TestNewRedisServer: empty port",
-			port: "",
+			port: redisServer.Addr(),
 		},
 	}
 	for _, tt := range tests {
@@ -26,6 +45,9 @@ func TestNewRedisServer(t *testing.T) {
 }
 
 func TestRedisServer_GetUserClient(t *testing.T) {
+	setup()
+	defer teardown()
+
 	tests := []struct {
 		name string
 		port string
@@ -33,13 +55,8 @@ func TestRedisServer_GetUserClient(t *testing.T) {
 	}{
 		{
 			name: "TestRedisServer_GetUserClient: port",
-			port: "localhost:6379",
-			want: "localhost:6379",
-		},
-		{
-			name: "TestRedisServer_GetUserClient: empty port",
-			port: "",
-			want: "localhost:6379",
+			port: redisServer.Addr(),
+			want: redisServer.Addr(),
 		},
 	}
 	for _, tt := range tests {
@@ -53,6 +70,9 @@ func TestRedisServer_GetUserClient(t *testing.T) {
 }
 
 func TestRedisServer_GetTweetClient(t *testing.T) {
+	setup()
+	defer teardown()
+
 	tests := []struct {
 		name string
 		port string
@@ -60,13 +80,8 @@ func TestRedisServer_GetTweetClient(t *testing.T) {
 	}{
 		{
 			name: "TestRedisServer_GetTweetClient: port",
-			port: "localhost:6379",
-			want: "localhost:6379",
-		},
-		{
-			name: "TestRedisServer_GetTweetClient: empty port",
-			port: "",
-			want: "localhost:6379",
+			port: redisServer.Addr(),
+			want: redisServer.Addr(),
 		},
 	}
 	for _, tt := range tests {
@@ -80,17 +95,15 @@ func TestRedisServer_GetTweetClient(t *testing.T) {
 }
 
 func TestRedisServer_Close(t *testing.T) {
+	setup()
+	defer teardown()
 	tests := []struct {
 		name string
 		port string
 	}{
 		{
 			name: "TestRedisServer_Close: port",
-			port: "localhost:6379",
-		},
-		{
-			name: "TestRedisServer_Close: empty port",
-			port: "",
+			port: redisServer.Addr(),
 		},
 	}
 	for _, tt := range tests {
@@ -101,4 +114,26 @@ func TestRedisServer_Close(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRedisServer_SetUserClient(t *testing.T) {
+	setup()
+	defer teardown()
+
+	t.Run("TestRedisServer_SetUserClient: port", func(t *testing.T) {
+		r := NewRedisServer(redisServer.Addr())
+		r.SetUserClient(r.GetUserClient())
+		assert.Equal(t, r.GetUserClient().Options().Addr, redisServer.Addr())
+	})
+}
+
+func TestRedisServer_SetTweetClient(t *testing.T) {
+	setup()
+	defer teardown()
+
+	t.Run("TestRedisServer_SetTweetClient: port", func(t *testing.T) {
+		r := NewRedisServer(redisServer.Addr())
+		r.SetTweetClient(r.GetTweetClient())
+		assert.Equal(t, r.GetTweetClient().Options().Addr, redisServer.Addr())
+	})
 }

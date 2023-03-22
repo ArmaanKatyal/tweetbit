@@ -34,9 +34,17 @@ func (r *RedisServer) GetUserClient() *redis.Client {
 	return r.userClient
 }
 
+func (r *RedisServer) SetUserClient(client *redis.Client) {
+	r.userClient = client
+}
+
 // GetTweetClient returns the redis client
 func (r *RedisServer) GetTweetClient() *redis.Client {
 	return r.tweetClient
+}
+
+func (r *RedisServer) SetTweetClient(client *redis.Client) {
+	r.tweetClient = client
 }
 
 // Close closes the redis clients

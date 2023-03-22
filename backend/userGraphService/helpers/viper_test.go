@@ -9,17 +9,17 @@ func TestGetConfigValue(t *testing.T) {
 		want string
 	}{
 		{
-			name: "TestGetConfigValue: valid key",
+			name: "should return value: valid key",
 			key:  "redis.port",
 			want: "localhost:6379",
 		},
 		{
-			name: "TestGetConfigValue: invalid key",
+			name: "should not return value: invalid key",
 			key:  "INVALID_KEY",
 			want: "NO_VALUE_FOUND",
 		},
 		{
-			name: "TestGetConfigValue: empty key",
+			name: "should not return value: empty key",
 			key:  "",
 			want: "NO_VALUE_FOUND",
 		},

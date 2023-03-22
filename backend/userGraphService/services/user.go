@@ -32,21 +32,24 @@ func HandleFollowUser(message *kafka.Message, rdb *redis.Client) error {
 }
 
 // Unfollow a user and remove the user from the follower list of the user
-func HandleUnfollowUser(message *kafka.Message, rdb *redis.Client) {
+func HandleUnfollowUser(message *kafka.Message, rdb *redis.Client) error {
 	// destructure the incoming message
 	var jsonMessage models.IFollowUser
 	err := json.Unmarshal(message.Value, &jsonMessage)
 	if err != nil {
 		log.Printf("Error: %v\n", err)
+		return err
 	}
 
 	// remove the user from the follower list of the user
 	err = rdb.SRem(context.Background(), jsonMessage.UserId, jsonMessage.FollowerId).Err()
 	if err != nil {
 		log.Printf("Error: %v\n", err)
+		return err
 	}
 
 	log.Printf("Unfollow User: %s\n", message.Value)
+	return nil
 }
 
 // Get all the followers of a user from redis
