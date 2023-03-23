@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var redisServer *miniredis.Miniredis
+var miniRedisServer *miniredis.Miniredis
 var userClient *redis.Client
 
 func mockRedis() *miniredis.Miniredis {
@@ -22,19 +22,19 @@ func mockRedis() *miniredis.Miniredis {
 }
 
 func setup() {
-	redisServer = mockRedis()
+	miniRedisServer = mockRedis()
 	userClient = redis.NewClient(&redis.Options{
-		Addr: redisServer.Addr(),
+		Addr: miniRedisServer.Addr(),
 		DB:   0,
 	})
 	tweetClient = redis.NewClient(&redis.Options{
-		Addr: redisServer.Addr(),
+		Addr: miniRedisServer.Addr(),
 		DB:   1,
 	})
 }
 
 func teardown() {
-	redisServer.Close()
+	miniRedisServer.Close()
 }
 
 func TestHandleFollowUser(t *testing.T) {
@@ -58,7 +58,7 @@ func TestHandleFollowUser(t *testing.T) {
 	})
 
 	t.Run("should fail with an error", func(t *testing.T) {
-		redisServer.SetError("FAIL")
+		miniRedisServer.SetError("FAIL")
 		err := HandleFollowUser(message, userClient)
 		assert.NotNil(t, err)
 		assert.Equal(t, "FAIL", err.Error())
@@ -96,7 +96,7 @@ func TestHandleUnFollowUser(t *testing.T) {
 	})
 
 	t.Run("should fail with an error", func(t *testing.T) {
-		redisServer.SetError("FAIL")
+		miniRedisServer.SetError("FAIL")
 		err := HandleUnfollowUser(message, userClient)
 		assert.NotNil(t, err)
 		assert.Equal(t, "FAIL", err.Error())
@@ -124,7 +124,7 @@ func TestGetAllUserFollowers(t *testing.T) {
 	})
 
 	t.Run("should fail with an error", func(t *testing.T) {
-		redisServer.SetError("FAIL")
+		miniRedisServer.SetError("FAIL")
 		_, err := GetAllUserFollowers("1", userClient)
 		assert.NotNil(t, err)
 		assert.Equal(t, "FAIL", err.Error())

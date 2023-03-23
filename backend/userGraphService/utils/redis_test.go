@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var redisServer *miniredis.Miniredis
+var miniRedisServer *miniredis.Miniredis
 
 func mockRedis() *miniredis.Miniredis {
 	s, err := miniredis.Run()
@@ -18,11 +18,11 @@ func mockRedis() *miniredis.Miniredis {
 }
 
 func setup() {
-	redisServer = mockRedis()
+	miniRedisServer = mockRedis()
 }
 
 func teardown() {
-	redisServer.Close()
+	miniRedisServer.Close()
 }
 
 func TestNewRedisServer(t *testing.T) {
@@ -34,7 +34,7 @@ func TestNewRedisServer(t *testing.T) {
 	}{
 		{
 			name: "TestNewRedisServer: port",
-			port: redisServer.Addr(),
+			port: miniRedisServer.Addr(),
 		},
 	}
 	for _, tt := range tests {
@@ -55,8 +55,8 @@ func TestRedisServer_GetUserClient(t *testing.T) {
 	}{
 		{
 			name: "TestRedisServer_GetUserClient: port",
-			port: redisServer.Addr(),
-			want: redisServer.Addr(),
+			port: miniRedisServer.Addr(),
+			want: miniRedisServer.Addr(),
 		},
 	}
 	for _, tt := range tests {
@@ -80,8 +80,8 @@ func TestRedisServer_GetTweetClient(t *testing.T) {
 	}{
 		{
 			name: "TestRedisServer_GetTweetClient: port",
-			port: redisServer.Addr(),
-			want: redisServer.Addr(),
+			port: miniRedisServer.Addr(),
+			want: miniRedisServer.Addr(),
 		},
 	}
 	for _, tt := range tests {
@@ -103,7 +103,7 @@ func TestRedisServer_Close(t *testing.T) {
 	}{
 		{
 			name: "TestRedisServer_Close: port",
-			port: redisServer.Addr(),
+			port: miniRedisServer.Addr(),
 		},
 	}
 	for _, tt := range tests {
@@ -121,9 +121,9 @@ func TestRedisServer_SetUserClient(t *testing.T) {
 	defer teardown()
 
 	t.Run("TestRedisServer_SetUserClient: port", func(t *testing.T) {
-		r := NewRedisServer(redisServer.Addr())
+		r := NewRedisServer(miniRedisServer.Addr())
 		r.SetUserClient(r.GetUserClient())
-		assert.Equal(t, r.GetUserClient().Options().Addr, redisServer.Addr())
+		assert.Equal(t, r.GetUserClient().Options().Addr, miniRedisServer.Addr())
 	})
 }
 
@@ -132,8 +132,8 @@ func TestRedisServer_SetTweetClient(t *testing.T) {
 	defer teardown()
 
 	t.Run("TestRedisServer_SetTweetClient: port", func(t *testing.T) {
-		r := NewRedisServer(redisServer.Addr())
+		r := NewRedisServer(miniRedisServer.Addr())
 		r.SetTweetClient(r.GetTweetClient())
-		assert.Equal(t, r.GetTweetClient().Options().Addr, redisServer.Addr())
+		assert.Equal(t, r.GetTweetClient().Options().Addr, miniRedisServer.Addr())
 	})
 }

@@ -66,7 +66,7 @@ func TestHandleCreateTweet(t *testing.T) {
 	})
 
 	t.Run("should fail as unable to add the tweet to the timeline of the followers", func(t *testing.T) {
-		redisServer.SetError("FAIL")
+		miniRedisServer.SetError("FAIL")
 		err := HandleCreateTweet(message, &redisStruct)
 		assert.NotNil(t, err)
 		assert.Equal(t, "FAIL", err.Error())
