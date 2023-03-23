@@ -14,9 +14,9 @@ type KafkaHandler struct {
 }
 
 // NewKafkaHandler creates a new KafkaHandler
-func NewKafkaHandler() (*KafkaHandler, error) {
+func NewKafkaHandler(bootstrapServerURL string) (*KafkaHandler, error) {
 	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers": helpers.GetConfigValue("kafka.bootstrap.servers"),
+		"bootstrap.servers": bootstrapServerURL,
 		"group.id":          helpers.GetConfigValue("kafka.group.id"),
 	})
 	if err != nil {
@@ -26,7 +26,7 @@ func NewKafkaHandler() (*KafkaHandler, error) {
 
 	return &KafkaHandler{
 		consumer:  consumer,
-		serverURL: helpers.GetConfigValue("kafka.bootstrap.servers"),
+		serverURL: bootstrapServerURL,
 		groupID:   helpers.GetConfigValue("kafka.group.id"),
 	}, nil
 }

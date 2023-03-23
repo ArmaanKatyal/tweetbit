@@ -20,7 +20,7 @@ func main() {
 
 	topics := []string{constants.CreateTweetTopic, constants.FollowUserTopic, constants.UnfollowUserTopic}
 
-	kafkaHandler, err := utils.NewKafkaHandler()
+	kafkaHandler, err := utils.NewKafkaHandler(helpers.GetConfigValue("kafka.bootstrap.servers"))
 	if err != nil {
 		log.Fatal(err)
 	}
