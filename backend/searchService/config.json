@@ -1,0 +1,9 @@
+{
+    "redis": {
+        "port": "localhost:6379"
+    },
+    "kafka": {
+        "group.id": "user-graph-service",
+        "bootstrap.servers": "localhost:9092"
+    }
+}
