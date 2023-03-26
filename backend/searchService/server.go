@@ -7,6 +7,7 @@ import (
 	"github.com/ArmaanKatyal/tweetbit/backend/searchService/helpers"
 	"github.com/ArmaanKatyal/tweetbit/backend/searchService/services"
 	"github.com/ArmaanKatyal/tweetbit/backend/searchService/utils"
+	"github.com/elastic/go-elasticsearch/v7"
 )
 
 func main() {
@@ -17,6 +18,19 @@ func main() {
 	}
 
 	kakfaHandler.SubscribeToOne(topic)
+
+	es, err := elasticsearch.NewDefaultClient()
+	if err != nil {
+		log.Fatalf("Error while creating elasticsearch client: %v", err)
+	}
+	log.Println("elasticsearch version: ", elasticsearch.Version)
+
+	res, err := es.Info()
+	if err != nil {
+		log.Fatalf("Error while getting elasticsearch info: %v", err)
+	}
+	defer res.Body.Close()
+	log.Println(res)
 
 	services.HandleRequests(kakfaHandler.GetConsumer())
 }
