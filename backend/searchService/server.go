@@ -23,14 +23,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error while creating elasticsearch client: %v", err)
 	}
-	log.Println("elasticsearch version: ", elasticsearch.Version)
 
-	res, err := es.Info()
-	if err != nil {
-		log.Fatalf("Error while getting elasticsearch info: %v", err)
-	}
-	defer res.Body.Close()
-	log.Println(res)
-
-	services.HandleRequests(kakfaHandler.GetConsumer())
+	services.HandleRequests(kakfaHandler.GetConsumer(), es)
 }
