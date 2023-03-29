@@ -33,5 +33,21 @@ func HandleCreateTweet(message *kafka.Message, client *esv7.Client) error {
 }
 
 func HandleDeleteTweet(message *kafka.Message, client *esv7.Client) error {
+	log.Printf("Delete Tweet: %s", message.Value)
+
+	var jsonMessage models.ITweet
+	err := json.Unmarshal(message.Value, &jsonMessage)
+	if err != nil {
+		log.Printf("Error unmarshalling message: %s", err)
+		return utils.WrapErrorf(err, utils.ErrorCodeUnknown, "json.Unmarshal")
+	}
+
+	esTweet := es.NewElasticTweet(client)
+	err = esTweet.DeleteTweet(jsonMessage.Id)
+	if err != nil {
+		log.Printf("Error deleting tweet: %s", err)
+		return utils.WrapErrorf(err, utils.ErrorCodeUnknown, "esTweet.DeleteTweet")
+	}
+
 	return nil
 }
