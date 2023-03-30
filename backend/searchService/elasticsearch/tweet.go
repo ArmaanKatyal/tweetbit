@@ -11,6 +11,8 @@ import (
 	"github.com/ArmaanKatyal/tweetbit/backend/searchService/utils"
 	esv7 "github.com/elastic/go-elasticsearch/v7"
 	esv7api "github.com/elastic/go-elasticsearch/v7/esapi"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // ElasticTweet represents the repository used for interacting with tweet records
@@ -28,7 +30,12 @@ func NewElasticTweet(client *esv7.Client) *ElasticTweet {
 }
 
 // Index creates or updates a tweet record in an index
-func (et *ElasticTweet) IndexTweet(message models.ITweet) error {
+func (et *ElasticTweet) IndexTweet(ctx context.Context, message models.ITweet) error {
+
+	ctx, span := trace.SpanFromContext(ctx).TracerProvider().Tracer("searchService.elasticsearch").Start(ctx, "ElasticTweet.IndexTweet")
+	defer span.End()
+
+	span.SetAttributes(attribute.Key("tweet_content").String(message.Content))
 	var buf bytes.Buffer
 
 	if err := json.NewEncoder(&buf).Encode(message); err != nil {
@@ -42,7 +49,7 @@ func (et *ElasticTweet) IndexTweet(message models.ITweet) error {
 		Refresh:    "true",
 	}
 
-	res, err := req.Do(context.Background(), et.client)
+	res, err := req.Do(ctx, et.client)
 	if err != nil {
 		log.Printf("Error getting response: %s", err)
 		return utils.WrapErrorf(err, utils.ErrorCodeUnknown, "TweetIndexRequest.Do")
@@ -60,13 +67,13 @@ func (et *ElasticTweet) IndexTweet(message models.ITweet) error {
 }
 
 // DeleteTweet removes a tweet record from an index
-func (et *ElasticTweet) DeleteTweet(id string) error {
+func (et *ElasticTweet) DeleteTweet(ctx context.Context, id string) error {
 	req := esv7api.DeleteRequest{
 		Index:      et.index,
 		DocumentID: id,
 	}
 
-	res, err := req.Do(context.Background(), et.client)
+	res, err := req.Do(ctx, et.client)
 	if err != nil {
 		log.Printf("Error getting response: %s", err)
 		return utils.WrapErrorf(err, utils.ErrorCodeUnknown, "TweetDeleteRequest.Do")
@@ -84,7 +91,7 @@ func (et *ElasticTweet) DeleteTweet(id string) error {
 }
 
 // Search returns tweets matching a query
-func (et *ElasticTweet) TweetSearch(description *string) ([]models.ITweet, error) {
+func (et *ElasticTweet) TweetSearch(ctx context.Context, description *string) ([]models.ITweet, error) {
 	if description == nil {
 		return nil, nil
 	}
