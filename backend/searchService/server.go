@@ -5,15 +5,12 @@ import (
 	"log"
 	"time"
 
-	"github.com/ArmaanKatyal/tweetbit/backend/searchService/constants"
 	"github.com/ArmaanKatyal/tweetbit/backend/searchService/helpers"
 	"github.com/ArmaanKatyal/tweetbit/backend/searchService/internal"
 	"github.com/ArmaanKatyal/tweetbit/backend/searchService/services"
-	"github.com/ArmaanKatyal/tweetbit/backend/searchService/utils"
+	"github.com/elastic/go-elasticsearch/v7"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
-
-	"github.com/elastic/go-elasticsearch/v7"
 )
 
 func main() {
@@ -38,21 +35,10 @@ func main() {
 		}
 	}(ctx)
 
-	ctx, span := tp.Tracer("searchService").Start(ctx, "searchService.main")
-	defer span.End()
-
-	topic := constants.CreateTweetTopic
-	kakfaHandler, err := utils.NewKafkaHandler(helpers.GetConfigValue("kafka.bootstrap.servers"))
-	if err != nil {
-		log.Fatalf("Error while creating kafka handler: %v", err)
-	}
-
-	kakfaHandler.SubscribeToOne(topic)
-
 	es, err := elasticsearch.NewDefaultClient()
 	if err != nil {
-		log.Fatalf("Error while creating elasticsearch client: %v", err)
+		log.Fatalf("Error creating elasticsearch client: %s", err)
 	}
 
-	services.HandleRequests(ctx, kakfaHandler.GetConsumer(), es)
+	services.StartConsumer(es)
 }

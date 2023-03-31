@@ -11,19 +11,17 @@ import (
 	esv7 "github.com/elastic/go-elasticsearch/v7"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
-
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
-func HandleCreateTweet(ctx context.Context, message *kafka.Message, client *esv7.Client) error {
-	log.Printf("Create Tweet: %s", message.Value)
+func HandleCreateTweet(ctx context.Context, message []byte, client *esv7.Client) error {
+	log.Printf("Create Tweet: %s", message)
 
 	ctx, span := trace.SpanFromContext(ctx).TracerProvider().Tracer("searchService.services").Start(ctx, "HandleCreateTweet")
 	defer span.End()
-	span.SetAttributes(attribute.Key("message").String(string(message.Value)))
+	span.SetAttributes(attribute.Key("message").String(string(message)))
 
 	var jsonMessage models.ITweet
-	err := json.Unmarshal(message.Value, &jsonMessage)
+	err := json.Unmarshal(message, &jsonMessage)
 	if err != nil {
 		log.Printf("Error unmarshalling message: %s", err)
 		return utils.WrapErrorf(err, utils.ErrorCodeUnknown, "json.Unmarshal")
@@ -39,16 +37,16 @@ func HandleCreateTweet(ctx context.Context, message *kafka.Message, client *esv7
 	return nil
 }
 
-func HandleDeleteTweet(ctx context.Context, message *kafka.Message, client *esv7.Client) error {
-	log.Printf("Delete Tweet: %s", message.Value)
+func HandleDeleteTweet(ctx context.Context, message []byte, client *esv7.Client) error {
+	log.Printf("Delete Tweet: %s", message)
 
 	ctx, span := trace.SpanFromContext(ctx).TracerProvider().Tracer("searchService.services").Start(ctx, "HandleDeleteTweet")
 	defer span.End()
 
-	span.SetAttributes(attribute.Key("message").String(string(message.Value)))
+	span.SetAttributes(attribute.Key("message").String(string(message)))
 
 	var jsonMessage models.ITweet
-	err := json.Unmarshal(message.Value, &jsonMessage)
+	err := json.Unmarshal(message, &jsonMessage)
 	if err != nil {
 		log.Printf("Error unmarshalling message: %s", err)
 		return utils.WrapErrorf(err, utils.ErrorCodeUnknown, "json.Unmarshal")
