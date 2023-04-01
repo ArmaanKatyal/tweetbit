@@ -7,7 +7,6 @@ import (
 
 	"github.com/ArmaanKatyal/tweetbit/backend/fanoutService/helpers"
 	pb "github.com/ArmaanKatyal/tweetbit/backend/fanoutService/proto"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
 type IFollowUser struct {
@@ -21,24 +20,13 @@ func (server *FanoutServer) FollowUser(ctx context.Context, req *pb.FollowUserRe
 	if helpers.StringToBool(helpers.GetConfigValue("featureFlag.enableKafka")) && helpers.StringToBool(helpers.GetConfigValue("featureFlag.enableFollowUser")) {
 		// publish to kafka
 		go func() {
-			p, err := kafka.NewProducer(&kafka.ConfigMap{
-				"bootstrap.servers": helpers.GetConfigValue("kafka.bootstrap.servers"),
-				"client.id":         helpers.GetConfigValue("kafka.client.id"),
-				"acks":              helpers.GetConfigValue("kafka.acks"),
-			})
-			if err != nil {
-				log.Fatalf("failed to create producer: %s", err)
-			}
 			topic := "followUser"
-			op := NewKafka(p, topic)
 			message := &IFollowUser{req.UserId, req.FollowerId}
 			json_message, err := json.Marshal(message)
 			if err != nil {
 				log.Fatalf("failed to marshal follow user: %s", err)
 			}
-			if err = op.PublishMessage(json_message); err != nil {
-				log.Fatalf("failed to place follow user: %s", err)
-			}
+			PublishMessage(ctx, topic, json_message)
 		}()
 	}
 	return &pb.FollowUserResponse{Success: true}, nil
@@ -49,24 +37,13 @@ func (server *FanoutServer) UnfollowUser(ctx context.Context, req *pb.FollowUser
 
 	if helpers.StringToBool(helpers.GetConfigValue("featureFlag.enableKafka")) && helpers.StringToBool(helpers.GetConfigValue("featureFlag.enableUnfollowUser")) {
 		go func() {
-			p, err := kafka.NewProducer(&kafka.ConfigMap{
-				"bootstrap.servers": helpers.GetConfigValue("kafka.bootstrap.servers"),
-				"client.id":         helpers.GetConfigValue("kafka.client.id"),
-				"acks":              helpers.GetConfigValue("kafka.acks"),
-			})
-			if err != nil {
-				log.Fatalf("failed to create producer: %s", err)
-			}
 			topic := "unfollowUser"
-			op := NewKafka(p, topic)
 			message := &IFollowUser{req.UserId, req.FollowerId}
 			json_message, err := json.Marshal(message)
 			if err != nil {
 				log.Fatalf("failed to marshal unfollow user: %s", err)
 			}
-			if err = op.PublishMessage(json_message); err != nil {
-				log.Fatalf("failed to place unfollow user: %s", err)
-			}
+			PublishMessage(ctx, topic, json_message)
 		}()
 	}
 	return &pb.FollowUserResponse{Success: true}, nil
