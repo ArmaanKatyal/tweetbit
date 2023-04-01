@@ -1,36 +1,77 @@
 package service
 
-import "github.com/confluentinc/confluent-kafka-go/kafka"
+import (
+	"context"
+	"fmt"
+	"log"
+	"time"
 
-type Kafka struct {
-	producer      *kafka.Producer
-	topic         string
-	delivery_chan chan kafka.Event
-}
+	"github.com/ArmaanKatyal/tweetbit/backend/fanoutService/helpers"
+	"github.com/ArmaanKatyal/tweetbit/backend/fanoutService/internal"
+	"github.com/Shopify/sarama"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/Shopify/sarama/otelsarama"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
+)
 
-func NewKafka(p *kafka.Producer, t string) *Kafka {
-	return &Kafka{
-		producer:      p,
-		topic:         t,
-		delivery_chan: make(chan kafka.Event),
+func PublishMessage(_ context.Context, topicName string, message []byte) {
+	tp, tperr := internal.TracerProvider(helpers.GetConfigValue("otel.endpoint"))
+	if tperr != nil {
+		log.Fatalf("Failed to create tracer provider: %v", tperr)
 	}
-}
 
-// publish a message to kafka topic
-func (op *Kafka) PublishMessage(message []byte) error {
-	err := op.producer.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &op.topic, Partition: kafka.PartitionAny},
-		Value:          []byte(message),
-	}, op.delivery_chan)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	defer func(ctx context.Context) {
+		ctx, cancel := context.WithTimeout(ctx, time.Second*5)
+		defer cancel()
+		if err := tp.Shutdown(ctx); err != nil {
+			log.Fatalf("Failed to shutdown tracer provider: %v", err)
+		}
+	}(ctx)
+
+	ctx, span := tp.Tracer("fanoutService.service").Start(ctx, "PublishMessage")
+	defer span.End()
+
+	propagators := propagation.TraceContext{}
+	producer := newAccessLogProducer([]string{helpers.GetConfigValue("kafka.bootstrap.servers")}, topicName, otel.GetTracerProvider(), propagators)
+
+	msg := sarama.ProducerMessage{
+		Topic: topicName,
+		Key:   sarama.StringEncoder(topicName),
+		Value: sarama.ByteEncoder(message),
+	}
+
+	propagators.Inject(ctx, otelsarama.NewProducerMessageCarrier(&msg))
+	producer.Input() <- &msg
+	successMsg := <-producer.Successes()
+	fmt.Println("success, offset:", successMsg.Offset)
+	span.SetAttributes(attribute.String("message", string(message)))
+
+	err := producer.Close()
 	if err != nil {
-		return err
+		span.SetStatus(codes.Error, err.Error())
+		log.Fatalf("Failed to close producer: %v", err)
+	}
+}
+
+func newAccessLogProducer(brokerList []string, topicName string, tracerProvider trace.TracerProvider,
+	propagators propagation.TraceContext) sarama.AsyncProducer {
+	config := sarama.NewConfig()
+	config.Version = sarama.V2_5_0_0
+	config.Producer.Return.Successes = true
+
+	producer, err := sarama.NewAsyncProducer(brokerList, config)
+	if err != nil {
+		log.Fatalf("Failed to start Sarama producer: %v", err)
 	}
 
-	e := <-op.delivery_chan
-	m := e.(*kafka.Message)
+	producer = otelsarama.WrapAsyncProducer(config, producer, otelsarama.WithTracerProvider(tracerProvider), otelsarama.WithPropagators(propagators))
+	log.Println("propagators: ", propagators)
 
-	if m.TopicPartition.Error != nil {
-		return m.TopicPartition.Error
-	}
-	return nil
+	return producer
 }
