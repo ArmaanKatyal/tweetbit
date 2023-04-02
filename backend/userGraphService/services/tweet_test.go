@@ -35,7 +35,7 @@ func TestHandleCreateTweet(t *testing.T) {
 
 	t.Run("should add the tweet to the timeline of all the followers", func(t *testing.T) {
 		// call the function
-		err := HandleCreateTweet(message, &redisStruct)
+		err := HandleCreateTweet(context.Background(), message.Value, &redisStruct)
 		assert.Nil(t, err)
 
 		/*
@@ -60,14 +60,14 @@ func TestHandleCreateTweet(t *testing.T) {
 		}
 
 		// call the function
-		err := HandleCreateTweet(message, &redisStruct)
+		err := HandleCreateTweet(context.Background(), message.Value, &redisStruct)
 		assert.NotNil(t, err)
 		assert.Equal(t, "unexpected end of JSON input", err.Error())
 	})
 
 	t.Run("should fail as unable to add the tweet to the timeline of the followers", func(t *testing.T) {
 		miniRedisServer.SetError("FAIL")
-		err := HandleCreateTweet(message, &redisStruct)
+		err := HandleCreateTweet(context.Background(), message.Value, &redisStruct)
 		assert.NotNil(t, err)
 		assert.Equal(t, "FAIL", err.Error())
 	})
