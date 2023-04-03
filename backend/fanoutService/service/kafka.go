@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/ArmaanKatyal/tweetbit/backend/fanoutService/helpers"
 	"github.com/ArmaanKatyal/tweetbit/backend/fanoutService/internal"
@@ -17,24 +16,13 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func PublishMessage(_ context.Context, topicName string, message []byte) {
+func PublishMessage(ctx context.Context, topicName string, message []byte) {
 	tp, tperr := internal.TracerProvider(helpers.GetConfigValue("otel.endpoint"))
 	if tperr != nil {
 		log.Fatalf("Failed to create tracer provider: %v", tperr)
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	defer func(ctx context.Context) {
-		ctx, cancel := context.WithTimeout(ctx, time.Second*5)
-		defer cancel()
-		if err := tp.Shutdown(ctx); err != nil {
-			log.Fatalf("Failed to shutdown tracer provider: %v", err)
-		}
-	}(ctx)
-
-	ctx, span := tp.Tracer("fanoutService.service").Start(ctx, "PublishMessage")
+	ctxNew, span := tp.Tracer("fanoutService.service").Start(ctx, "PublishMessage")
 	defer span.End()
 
 	propagators := propagation.TraceContext{}
@@ -46,7 +34,7 @@ func PublishMessage(_ context.Context, topicName string, message []byte) {
 		Value: sarama.ByteEncoder(message),
 	}
 
-	propagators.Inject(ctx, otelsarama.NewProducerMessageCarrier(&msg))
+	propagators.Inject(ctxNew, otelsarama.NewProducerMessageCarrier(&msg))
 	producer.Input() <- &msg
 	successMsg := <-producer.Successes()
 	fmt.Println("success, offset:", successMsg.Offset)
