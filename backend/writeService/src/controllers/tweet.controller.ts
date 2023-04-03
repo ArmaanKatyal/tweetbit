@@ -4,6 +4,9 @@ import nodeConfig from 'config';
 import { tweetClient } from '../services/tweet.service';
 import { checkIfUserExists } from '../helpers/verifyUser.helper';
 
+import opentelemetry from '@opentelemetry/api';
+import { initTracer } from '../utils/opentelemetry.util';
+
 // Convert BigInt to string
 (BigInt.prototype as any).toJSON = function () {
     return this.toString();
@@ -40,28 +43,36 @@ export const createTweet = async (req: Request, res: Response) => {
             },
         });
 
-        // contact the fanout service using gRPC
-        tweetClient.createTweet(
-            {
-                ...tweet,
-                id: tweet.id.toString(),
-                likesCount: tweet.likes_count.toString(),
-                retweetsCount: tweet.retweets_count.toString(),
-                createdAt: tweet.created_at.toString(),
-            },
-            (err) => {
-                if (err) {
-                    req.log.error({
-                        message: 'Error trasmitting tweet to fanout service',
-                        email,
-                        uuid,
-                    });
-                    return res
-                        .status(500)
-                        .json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
+        const span = initTracer().startSpan('/create');
+        opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => {
+            span.setAttribute('tweetId', tweet.id.toString());
+            span.setAttribute('userId', user_id!.toString());
+            span.setAttribute('uuid', tweet.uuid);
+            // contact the fanout service using gRPC
+            tweetClient.createTweet(
+                {
+                    ...tweet,
+                    id: tweet.id.toString(),
+                    likesCount: tweet.likes_count.toString(),
+                    retweetsCount: tweet.retweets_count.toString(),
+                    createdAt: tweet.created_at.toString(),
+                },
+                (err) => {
+                    span.end();
+                    if (err) {
+                        req.log.error({
+                            message: 'Error trasmitting tweet to fanout service',
+                            email,
+                            uuid,
+                        });
+                        return res
+                            .status(500)
+                            .json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
+                    }
                 }
-            }
-        );
+            );
+        })
+
         res.status(201).json(tweet);
         req.log.info({
             message: 'Tweet created',

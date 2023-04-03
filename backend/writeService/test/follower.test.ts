@@ -24,7 +24,7 @@ dotenv.config();
 const test_token = process.env.TEST_TOKEN || '';
 
 describe('/api/user', async () => {
-    let userEmail: string = 'test@test.com'
+    let userEmail: string = 'test@test.com';
     let test_user: any;
     before(async () => {
         test_user = await prisma.user.create({
@@ -40,27 +40,25 @@ describe('/api/user', async () => {
         await prisma.user.delete({
             where: {
                 id: test_user.id,
-            }
-        })
-    })
+            },
+        });
+    });
     describe('[POST] /follow/:userEmail', () => {
         beforeEach(() => {
             sinon.createSandbox();
             // mock the followUser function
-            sinon.mock(userClient).expects('FollowUser').returns({Success: true});
+            sinon.mock(userClient).expects('FollowUser').returns({ Success: true });
         });
         afterEach(() => {
             sinon.restore();
         });
         after(async () => {
-            await prisma.$transaction([
-                prisma.user_Followers.deleteMany(),
-            ]);
+            await prisma.$transaction([prisma.user_Followers.deleteMany()]);
         });
         it('should follow the user with the given email', async () => {
-            const { status, body } = await request(app).post(`/api/user/follow/${userEmail}`).set(
-                'Authorization', 'Bearer ' + test_token
-            )
+            const { status, body } = await request(app)
+                .post(`/api/user/follow/${userEmail}`)
+                .set('Authorization', 'Bearer ' + test_token);
             chai.expect(status).to.equal(200);
             chai.expect(body).to.have.property('newFollower');
             chai.expect(body).to.have.property('user');
@@ -79,26 +77,24 @@ describe('/api/user', async () => {
                         },
                     },
                     user_id: user_id!,
-                }
-            })
-        })
+                },
+            });
+        });
         beforeEach(() => {
             sinon.createSandbox();
             // mock the followUser function
-            sinon.mock(userClient).expects('UnfollowUser').returns({Success: true});
+            sinon.mock(userClient).expects('UnfollowUser').returns({ Success: true });
         });
         afterEach(() => {
             sinon.restore();
         });
         after(async () => {
-            await prisma.$transaction([
-                prisma.user_Followers.deleteMany(),
-            ]);
+            await prisma.$transaction([prisma.user_Followers.deleteMany()]);
         });
         it('should unfollow the user with the given email', async () => {
-            const {status, body} = await request(app).post(`/api/user/unfollow/${userEmail}`).set(
-                'Authorization', 'Bearer ' + test_token
-            )
+            const { status, body } = await request(app)
+                .post(`/api/user/unfollow/${userEmail}`)
+                .set('Authorization', 'Bearer ' + test_token);
             chai.expect(status).to.equal(200);
             chai.expect(body).to.have.property('deletedFollower');
             chai.expect(body).to.have.property('user');
