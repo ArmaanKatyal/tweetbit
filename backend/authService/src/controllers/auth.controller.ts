@@ -8,6 +8,7 @@ import nodeConfig from 'config';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import * as dotenv from 'dotenv';
+import prisma from '../../prisma/client';
 dotenv.config();
 
 export const salt: number = parseInt(process.env.SALT_ROUNDS!);
@@ -71,6 +72,12 @@ const login = async (req: Request, res: Response) => {
             expiresIn: nodeConfig.get('token.expire.refresh'),
         }
     );
+    
+    res.cookie('access_token', access_token, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'none',
+    });
 
     // Set cookie
     res.cookie('refresh_token', refresh_token, {
@@ -79,10 +86,10 @@ const login = async (req: Request, res: Response) => {
         sameSite: 'none',
     });
 
-    // Make a call to the User Database and attach the information with the response
-    let checkUser = await User.findOne({
-        uuid: checkAuth.uuid,
-        email: checkAuth.email,
+    let checkUser = await prisma.user.findUnique({
+        where: {
+            email: checkAuth.email,
+        }
     });
     if (!checkUser) {
         req.log.info({
@@ -95,7 +102,7 @@ const login = async (req: Request, res: Response) => {
     }
 
     // Remove the uuid and _id from the payload
-    let { uuid, _id, ...newPayload } = (checkUser as any)._doc;
+    let { uuid, id, ...newPayload } = (checkUser as any);
 
     // Send token
     res.status(200).json({
@@ -107,6 +114,7 @@ const login = async (req: Request, res: Response) => {
 
 const logout = async (req: Request, res: Response) => {
     res.clearCookie('refresh_token');
+    res.clearCookie('access_token');
     res.status(200).json({
         message: 'Logged out successfully',
     });
@@ -143,7 +151,12 @@ const register = async (req: Request, res: Response) => {
     }
 
     // Check if user already exists
-    let checkUser = await Auth.findOne({ email: req.body.email });
+    // let checkUser = await Auth.findOne({ email: req.body.email });
+    let checkUser = await prisma.user.findUnique({
+        where: {
+            email: req.body.email,
+        }
+    })
     if (checkUser) {
         req.log.info({
             message: 'User already exists',
@@ -178,16 +191,17 @@ const register = async (req: Request, res: Response) => {
     }
 
     // Remove password from the payload
-    let { password, ...newPayload } = req.body;
-
-    // Save the user to user database
-    const newUser = new User({
-        uuid: uniqueID,
-        ...newPayload,
-    });
+    // let { password, ...newPayload } = req.body;
 
     try {
-        await newUser.save();
+        await prisma.user.create({
+            data: {
+                uuid: uniqueID,
+                first_name: req.body.first_name,
+                last_name: req.body.last_name,
+                email: req.body.email
+            }
+        })
     } catch (err) {
         req.log.info({
             message: 'Error while saving user to user database',
