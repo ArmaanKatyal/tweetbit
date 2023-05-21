@@ -16,5 +16,8 @@ func NewGinService() *GinService {
 
 // Run is a method that runs the gin.Engine
 func (g *GinService) Run() {
-	g.Engine.Run(":3000")
+	err := g.Engine.Run(":3000")
+	if err != nil {
+		return 
+	}
 }
