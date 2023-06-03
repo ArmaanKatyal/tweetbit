@@ -39,6 +39,7 @@ func (et *ElasticTweet) IndexTweet(ctx context.Context, message models.ITweet) e
 	var buf bytes.Buffer
 
 	if err := json.NewEncoder(&buf).Encode(message); err != nil {
+		span.SetAttributes(attribute.Key("error").Bool(true))
 		return utils.WrapErrorf(err, utils.ErrorCodeUnknown, "json.NewEncoder.Encode")
 	}
 
@@ -51,12 +52,14 @@ func (et *ElasticTweet) IndexTweet(ctx context.Context, message models.ITweet) e
 
 	res, err := req.Do(ctx, et.client)
 	if err != nil {
+		span.SetAttributes(attribute.Key("error").Bool(true))
 		log.Printf("Error getting response: %s", err)
 		return utils.WrapErrorf(err, utils.ErrorCodeUnknown, "TweetIndexRequest.Do")
 	}
 	defer res.Body.Close()
 
 	if res.IsError() {
+		span.SetAttributes(attribute.Key("error").Bool(true))
 		log.Printf("[%s] Error indexing document ID=%s", res.Status(), message.Id)
 		return utils.NewErrorf(utils.ErrorCodeUnknown, "TweetIndexRequest.Do %s", res.StatusCode)
 	}
@@ -96,12 +99,15 @@ func (et *ElasticTweet) TweetSearch(ctx context.Context, description *string) ([
 		return nil, nil
 	}
 
+	newCtx, span := trace.SpanFromContext(ctx).TracerProvider().Tracer("searchService.elasticsearch").Start(ctx, "ElasticTweet.TweetSearch")
+	defer span.End()
+
 	should := make([]interface{}, 0, 3)
 
 	if description != nil {
 		should = append(should, map[string]interface{}{
 			"match": map[string]interface{}{
-				"description": *description,
+				"content": *description,
 			},
 		})
 	}
@@ -122,11 +128,13 @@ func (et *ElasticTweet) TweetSearch(ctx context.Context, description *string) ([
 		}
 	}
 
-	log.Printf("%#v\n", query)
+	b, _ := json.Marshal(query)
+	span.SetAttributes(attribute.Key("query").String(string(b)))
 
 	var buf bytes.Buffer
 
 	if err := json.NewEncoder(&buf).Encode(query); err != nil {
+		span.SetAttributes(attribute.Key("error").Bool(true))
 		return nil, utils.WrapErrorf(err, utils.ErrorCodeUnknown, "json.NewEncoder.Encode")
 	}
 
@@ -134,14 +142,16 @@ func (et *ElasticTweet) TweetSearch(ctx context.Context, description *string) ([
 		Index: []string{et.index},
 		Body:  &buf,
 	}
-	res, err := req.Do(context.Background(), et.client)
+	res, err := req.Do(newCtx, et.client)
 	if err != nil {
+		span.SetAttributes(attribute.Key("error").Bool(true))
 		log.Printf("Error getting response: %s", err)
 		return nil, utils.WrapErrorf(err, utils.ErrorCodeUnknown, "TweetSearchRequest.Do")
 	}
 	defer res.Body.Close()
 
 	if res.IsError() {
+		span.SetAttributes(attribute.Key("error").Bool(true))
 		log.Printf("[%s] Error getting response: %s", res.Status(), res.String())
 		return nil, utils.NewErrorf(utils.ErrorCodeUnknown, "TweetSearchRequest.Do %s", res.StatusCode)
 	}
@@ -155,6 +165,7 @@ func (et *ElasticTweet) TweetSearch(ctx context.Context, description *string) ([
 	}
 
 	if err := json.NewDecoder(res.Body).Decode(&hits); err != nil {
+		span.SetAttributes(attribute.Key("error").Bool(true))
 		log.Printf("Error parsing the response body: %s", err)
 		return nil, utils.WrapErrorf(err, utils.ErrorCodeUnknown, "json.NewDecoder.Decode")
 	}

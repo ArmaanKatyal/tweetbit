@@ -40,5 +40,8 @@ func main() {
 		log.Fatalf("Error creating elasticsearch client: %s", err)
 	}
 
+	r := services.NewRouter(ctx, es)
+	r.Run(helpers.GetConfigValue("server.port"))
+
 	services.StartConsumer(es)
 }
