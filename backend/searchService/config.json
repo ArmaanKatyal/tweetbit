@@ -13,5 +13,10 @@
     },
     "server": {
         "port": ":5000"
+    },
+    "jwt": {
+        "secret": {
+            "temp": "test"
+        }
     }
 }

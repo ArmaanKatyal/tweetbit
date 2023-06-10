@@ -61,7 +61,7 @@ func (et *ElasticTweet) IndexTweet(ctx context.Context, message models.ITweet) e
 	if res.IsError() {
 		span.SetAttributes(attribute.Key("error").Bool(true))
 		log.Printf("[%s] Error indexing document ID=%s", res.Status(), message.Id)
-		return utils.NewErrorf(utils.ErrorCodeUnknown, "TweetIndexRequest.Do %s", res.StatusCode)
+		return utils.NewErrorf(utils.ErrorCodeUnknown, "TweetIndexRequest.Do %s", res)
 	}
 
 	io.Copy(io.Discard, res.Body)
@@ -85,7 +85,7 @@ func (et *ElasticTweet) DeleteTweet(ctx context.Context, id string) error {
 
 	if res.IsError() {
 		log.Printf("[%s] Error deleting document ID=%s", res.Status(), id)
-		return utils.NewErrorf(utils.ErrorCodeUnknown, "TweetDeleteRequest.Do %s", res.StatusCode)
+		return utils.NewErrorf(utils.ErrorCodeUnknown, "TweetDeleteRequest.Do %s", res)
 	}
 
 	io.Copy(io.Discard, res.Body)
@@ -153,7 +153,7 @@ func (et *ElasticTweet) TweetSearch(ctx context.Context, description *string) ([
 	if res.IsError() {
 		span.SetAttributes(attribute.Key("error").Bool(true))
 		log.Printf("[%s] Error getting response: %s", res.Status(), res.String())
-		return nil, utils.NewErrorf(utils.ErrorCodeUnknown, "TweetSearchRequest.Do %s", res.StatusCode)
+		return nil, utils.NewErrorf(utils.ErrorCodeUnknown, "TweetSearchRequest.Do %s", res)
 	}
 
 	var hits struct {

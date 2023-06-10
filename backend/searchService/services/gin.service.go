@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/ArmaanKatyal/tweetbit/backend/searchService/controllers"
+	"github.com/ArmaanKatyal/tweetbit/backend/searchService/middlewares"
 	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel"
@@ -21,7 +22,7 @@ func NewRouter(ctx context.Context, es *elasticsearch.Client) *gin.Engine {
 	health := new(controllers.HealthController)
 
 	router.GET("/health", health.Status)
-	// router.Use(middlewares.AuthMiddleware())
+	router.Use(middlewares.VerifyToken())
 
 	v1 := router.Group("/api/v1")
 	{
@@ -29,7 +30,7 @@ func NewRouter(ctx context.Context, es *elasticsearch.Client) *gin.Engine {
 		{
 			span.SetAttributes(attribute.Key("group").String("search"))
 			search := new(controllers.SearchController)
-			searchGroup.GET("/tweet", search.Search(newCtx, es))
+			searchGroup.GET("/tweet", search.TweetSearch(newCtx, es))
 		}
 	}
 	return router

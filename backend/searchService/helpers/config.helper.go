@@ -1,6 +1,10 @@
 package helpers
 
-import "github.com/spf13/viper"
+import (
+	"os"
+
+	"github.com/spf13/viper"
+)
 
 // returns the value of the config variable
 func GetConfigValue(key string) string {
@@ -17,4 +21,12 @@ func GetConfigValue(key string) string {
 		return "NO_VALUE_FOUND"
 	}
 	return value
+}
+
+// returns the value of the environment variable
+func GetEnvValue(key string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return "test"
 }

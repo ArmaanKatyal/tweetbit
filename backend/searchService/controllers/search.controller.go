@@ -14,7 +14,7 @@ import (
 
 type SearchController struct{}
 
-func (sc SearchController) Search(ctx context.Context, client *elasticsearch.Client) gin.HandlerFunc {
+func (sc SearchController) TweetSearch(ctx context.Context, client *elasticsearch.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		newCtx, span := trace.SpanFromContext(ctx).TracerProvider().Tracer("searchService.controllers").Start(ctx, "SearchController.Search")
 		defer span.End()
