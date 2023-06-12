@@ -1,0 +1,109 @@
+version: '3.4'
+services:
+  db:
+    image: 'postgres:14.1-alpine'
+    container_name: postgres1
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - 'db:/var/lib/postgresql/data'
+  zookeeper:
+    image: 'confluentinc/cp-zookeeper:7.3.0'
+    hostname: zookeeper
+    container_name: zookeeper1
+    ports:
+      - '2181:2181'
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+  broker:
+    image: 'confluentinc/cp-kafka:7.3.0'
+    hostname: broker
+    container_name: broker1
+    depends_on:
+      - zookeeper
+    ports:
+      - '29092:29092'
+      - '9092:9092'
+      - '9101:9101'
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+
+  mongodb:
+    image: mongo:6.0.3
+    container_name: mongo1
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+      MONGO_PACKAGE: mongodb-org
+      MONGO_REPO: repo.mongodb.org
+      MONGO_MAJOR: 6.0
+      MONGO_VERSION: 6.0.3
+      HOME: /data/db
+    ports:
+      - '27017:27017'
+    volumes:
+      - 'mongodb:/data/db'
+
+  redis:
+    image: redis:7.0.7-alpine
+    container_name: redis1
+    ports:
+      - '6379:6379'
+    restart: always
+    volumes:
+      - 'redis:/data'
+
+  elasticsearch_some:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.2
+    container_name: elasticsearch1
+    environment:
+      - discovery.type=single-node
+      - ELASTIC_CONTAINER=true
+    ports:
+      - '9200:9200'
+    restart: always
+    healthcheck:
+      test: curl --fail http://localhost:9200 || exit 1
+      interval: 60s
+      retries: 5
+      start_period: 20s
+      timeout: 10s
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger1
+    ports:
+      - '5775:5775/udp'
+      - '6831:6831/udp'
+      - '6832:6832/udp'
+      - '5778:5778'
+      - '16686:16686'
+      - '14268:14268'
+      - '9411:9411'
+    restart: always
+    volumes:
+      - 'jaeger:/tmp'
+
+volumes:
+  db:
+    driver: local
+  redis:
+    driver: local
+  jaeger:
+    driver: local
+  mongodb:
+    driver: local
