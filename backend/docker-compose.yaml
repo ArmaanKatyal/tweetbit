@@ -3,12 +3,19 @@ services:
   db:
     image: 'postgres:14.1-alpine'
     container_name: postgres1
+    hostname: postgres
     restart: always
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     ports:
       - '5432:5432'
+    healthcheck:
+      test: pg_isready -U postgres
+      interval: 60s
+      retries: 5
+      start_period: 20s
+      timeout: 10s
     volumes:
       - 'db:/var/lib/postgresql/data'
   zookeeper:
@@ -45,6 +52,7 @@ services:
   mongodb:
     image: mongo:6.0.3
     container_name: mongo1
+    hostname: mongo
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: root
@@ -55,21 +63,35 @@ services:
       HOME: /data/db
     ports:
       - '27017:27017'
+    healthcheck:
+      test: mongo --eval 'db.runCommand("ping").ok'
+      interval: 60s
+      retries: 5
+      start_period: 20s
+      timeout: 10s
     volumes:
       - 'mongodb:/data/db'
 
   redis:
     image: redis:7.0.7-alpine
     container_name: redis1
+    hostname: redis
     ports:
       - '6379:6379'
     restart: always
+    healthcheck:
+      test: redis-cli ping
+      interval: 60s
+      retries: 5
+      start_period: 20s
+      timeout: 10s
     volumes:
       - 'redis:/data'
 
   elasticsearch_some:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.5.2
     container_name: elasticsearch1
+    hostname: elasticsearch
     environment:
       - discovery.type=single-node
       - ELASTIC_CONTAINER=true
@@ -86,6 +108,7 @@ services:
   jaeger:
     image: jaegertracing/all-in-one:latest
     container_name: jaeger1
+    hostname: jaeger
     ports:
       - '5775:5775/udp'
       - '6831:6831/udp'
@@ -95,8 +118,69 @@ services:
       - '14268:14268'
       - '9411:9411'
     restart: always
+    healthcheck:
+      test: curl --fail http://localhost:16686 || exit 1
+      interval: 60s
+      retries: 5
+      start_period: 20s
+      timeout: 10s
     volumes:
       - 'jaeger:/tmp'
+
+  grafana:
+    image: grafana/grafana-enterprise:9.5.3
+    container_name: grafana1
+    restart: unless-stopped
+    hostname: grafana
+    ports:
+      - '3000:3000'
+    environment:
+      - GF_SERVER_ROOT_URL=http://my.grafana.server/
+    volumes:
+      - grafana_data:/var/lib/grafana
+    healthcheck:
+      test: curl --fail http://localhost:3000 || exit 1
+      interval: 60s
+      retries: 5
+      start_period: 20s
+      timeout: 10s
+
+  prometheus:
+    image: prom/prometheus:v2.44.0
+    container_name: prometheus1
+    restart: unless-stopped
+    hostname: prometheus
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    healthcheck:
+      test: curl --fail http://localhost:9090 || exit 1
+      interval: 60s
+      retries: 5
+      start_period: 20s
+      timeout: 10s
+
+  # search_service:
+  #   build:
+  #     context: searchService
+  #     dockerfile: ./Dockerfile
+  #     platforms:
+  #       - linux/amd64
+  #       - linux/arm64
+  #   container_name: search_service
+  #   ports:
+  #     - '5000:5000'
+  #   depends_on:
+  #     - broker
+  #     - zookeeper
+  #     - elasticsearch_some
+  #     - jaeger
 
 volumes:
   db:
@@ -107,3 +191,4 @@ volumes:
     driver: local
   mongodb:
     driver: local
+  grafana_data: {}
