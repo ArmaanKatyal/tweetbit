@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/ArmaanKatyal/tweetbit/backend/searchService/helpers"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 )
 
 type KafkaHandler struct {

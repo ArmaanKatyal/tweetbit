@@ -11,11 +11,7 @@ services:
     ports:
       - '5432:5432'
     healthcheck:
-      test: pg_isready -U postgres
-      interval: 60s
-      retries: 5
-      start_period: 20s
-      timeout: 10s
+      test: ["CMD", "pg_isready", "-U", "postgres"]
     volumes:
       - 'db:/var/lib/postgresql/data'
   zookeeper:
@@ -27,6 +23,8 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    healthcheck:
+      test: ["CMD", "zookeeper-shell", "localhost:2181", "ls", "/"]
   broker:
     image: 'confluentinc/cp-kafka:7.3.0'
     hostname: broker
@@ -48,6 +46,8 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_JMX_PORT: 9101
       KAFKA_JMX_HOSTNAME: localhost
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "broker:29092", "--list"]
 
   mongodb:
     image: mongo:6.0.3
@@ -64,11 +64,11 @@ services:
     ports:
       - '27017:27017'
     healthcheck:
-      test: mongo --eval 'db.runCommand("ping").ok'
-      interval: 60s
-      retries: 5
-      start_period: 20s
+      test: echo 'db.runCommand("ping").ok' | mongo mongo:27017/test --quiet
+      interval: 10s
       timeout: 10s
+      retries: 5
+      start_period: 40s
     volumes:
       - 'mongodb:/data/db'
 
@@ -80,16 +80,12 @@ services:
       - '6379:6379'
     restart: always
     healthcheck:
-      test: redis-cli ping
-      interval: 60s
-      retries: 5
-      start_period: 20s
-      timeout: 10s
+      test: ["CMD", "redis-cli","ping"]
     volumes:
       - 'redis:/data'
 
   elasticsearch_some:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.10
     container_name: elasticsearch1
     hostname: elasticsearch
     environment:
@@ -99,14 +95,10 @@ services:
       - '9200:9200'
     restart: always
     healthcheck:
-      test: curl --fail http://localhost:9200 || exit 1
-      interval: 60s
-      retries: 5
-      start_period: 20s
-      timeout: 10s
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
 
   jaeger:
-    image: jaegertracing/all-in-one:latest
+    image: jaegertracing/all-in-one:1.46
     container_name: jaeger1
     hostname: jaeger
     ports:
@@ -118,12 +110,6 @@ services:
       - '14268:14268'
       - '9411:9411'
     restart: always
-    healthcheck:
-      test: curl --fail http://localhost:16686 || exit 1
-      interval: 60s
-      retries: 5
-      start_period: 20s
-      timeout: 10s
     volumes:
       - 'jaeger:/tmp'
 
@@ -139,11 +125,7 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
     healthcheck:
-      test: curl --fail http://localhost:3000 || exit 1
-      interval: 60s
-      retries: 5
-      start_period: 20s
-      timeout: 10s
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
 
   prometheus:
     image: prom/prometheus:v2.44.0
@@ -159,12 +141,6 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
       - '--web.console.templates=/usr/share/prometheus/consoles'
-    healthcheck:
-      test: curl --fail http://localhost:9090 || exit 1
-      interval: 60s
-      retries: 5
-      start_period: 20s
-      timeout: 10s
 
   # search_service:
   #   build:
