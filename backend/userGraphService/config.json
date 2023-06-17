@@ -1,14 +1,14 @@
 {
     "redis": {
-        "port": "localhost:6379"
+        "port": "redis:6379"
     },
     "kafka": {
         "group.id": "user-graph-service",
-        "bootstrap.servers": "localhost:9092"
+        "bootstrap.servers": "broker:9093"
     },
     "otel": {
         "service": "userGraphService",
         "environment": "production",
-        "endpoint": "http://localhost:14268/api/traces"
+        "endpoint": "http://jaeger:14268/api/traces"
     }
 }
