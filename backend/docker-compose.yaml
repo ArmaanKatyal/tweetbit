@@ -181,6 +181,21 @@ services:
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
 
+  fanoutservice:
+    build:
+      context: fanoutService
+      dockerfile: ./Dockerfile
+    container_name: fanoutservice
+    ports:
+      - '3002:3002'
+    depends_on:
+      broker:
+        condition: service_healthy
+      zookeeper:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
+
 volumes:
   db:
     driver: local
