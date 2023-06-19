@@ -4,7 +4,6 @@ go 1.20
 
 require (
 	github.com/Shopify/sarama v1.38.1
-	github.com/confluentinc/confluent-kafka-go/v2 v2.0.2
 	github.com/elastic/go-elasticsearch/v7 v7.17.10
 	github.com/spf13/viper v1.16.0
 	go.opentelemetry.io/contrib/instrumentation/github.com/Shopify/sarama/otelsarama v0.42.0

@@ -4,7 +4,7 @@
     },
     "kafka": {
         "group.id": "user-graph-service",
-        "bootstrap.servers": "broker:9093"
+        "bootstrap.servers": "kafka:9092"
     },
     "otel": {
         "service": "userGraphService",
