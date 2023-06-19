@@ -35,11 +35,13 @@ func main() {
 		}
 	}(ctx)
 
-	es, err := elasticsearch.NewDefaultClient()
+	// create elasticsearch client with custom url
+	es, err := elasticsearch.NewClient(elasticsearch.Config{
+		Addresses: []string{helpers.GetConfigValue("elasticsearch.url")},
+	})
 	if err != nil {
 		log.Fatalf("Error creating elasticsearch client: %s", err)
 	}
-
 	go services.StartConsumer(es)
 
 	r := services.NewRouter(ctx, es)

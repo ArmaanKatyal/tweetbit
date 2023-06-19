@@ -18,5 +18,8 @@
         "secret": {
             "temp": "test"
         }
+    },
+    "elasticsearch": {
+        "url": "http://elasticsearch:9200"
     }
 }

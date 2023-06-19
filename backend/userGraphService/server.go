@@ -16,7 +16,7 @@ import (
 func main() {
 	tp, err := internal.TracerProvider(helpers.GetConfigValue("otel.endpoint"))
 	if err != nil {
-		log.Fatalf("Error while creating tracer provider: %v", err)
+		log.Printf("Error while creating tracer provider: %v", err)
 	}
 
 	otel.SetTracerProvider(tp)
@@ -29,7 +29,7 @@ func main() {
 		ctx, cancel := context.WithTimeout(ctx, time.Second*5)
 		defer cancel()
 		if err := tp.Shutdown(ctx); err != nil {
-			log.Fatalf("Error while shutting down tracer provider: %v", err)
+			log.Printf("Error while shutting down tracer provider: %v", err)
 		}
 	}(ctx)
 

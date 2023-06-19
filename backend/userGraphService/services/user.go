@@ -13,7 +13,7 @@ import (
 )
 
 // Add the follower to the user's follower list
-func HandleFollowUser(ctx context.Context, message []byte, rdb *redis.Client) error {
+func HandleFollowUser(ctx context.Context, message []byte, rdb *redis.Client) {
 	log.Printf("Follow User: %s", message)
 
 	ctxNew, span := trace.SpanFromContext(ctx).TracerProvider().Tracer("userGraphService.services").Start(ctx, "HandleFollowUser")
@@ -27,7 +27,6 @@ func HandleFollowUser(ctx context.Context, message []byte, rdb *redis.Client) er
 	if err != nil {
 		log.Printf("Error: %v\n", err)
 		span.SetStatus(codes.Error, err.Error())
-		return err
 	}
 
 	// add the user to the follower list of the user
@@ -35,15 +34,13 @@ func HandleFollowUser(ctx context.Context, message []byte, rdb *redis.Client) er
 	if err != nil {
 		log.Printf("Error: %v\n", err)
 		span.SetStatus(codes.Error, err.Error())
-		return err
 	}
 
 	log.Printf("Follow User: %s\n", message)
-	return nil
 }
 
 // Unfollow a user and remove the user from the follower list of the user
-func HandleUnfollowUser(ctx context.Context, message []byte, rdb *redis.Client) error {
+func HandleUnfollowUser(ctx context.Context, message []byte, rdb *redis.Client) {
 	log.Printf("Unfollow User: %s", message)
 
 	ctxNew, span := trace.SpanFromContext(ctx).TracerProvider().Tracer("userGraphService.services").Start(ctx, "HandleUnfollowUser")
@@ -56,7 +53,6 @@ func HandleUnfollowUser(ctx context.Context, message []byte, rdb *redis.Client) 
 	if err != nil {
 		log.Printf("Error: %v\n", err)
 		span.SetStatus(codes.Error, err.Error())
-		return err
 	}
 
 	// remove the user from the follower list of the user
@@ -64,11 +60,9 @@ func HandleUnfollowUser(ctx context.Context, message []byte, rdb *redis.Client) 
 	if err != nil {
 		log.Printf("Error: %v\n", err)
 		span.SetStatus(codes.Error, err.Error())
-		return err
 	}
 
 	log.Printf("Unfollow User: %s\n", message)
-	return nil
 }
 
 // Get all the followers of a user from redis
