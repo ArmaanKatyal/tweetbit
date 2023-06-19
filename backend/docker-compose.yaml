@@ -161,12 +161,15 @@ services:
         condition: service_healthy
       jaeger:
         condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
 
   searchservice:
     build:
       context: searchService
       dockerfile: ./Dockerfile
     container_name: searchservice
+    hostname: searchservice
     ports:
       - '5000:5000'
     depends_on:
@@ -186,6 +189,7 @@ services:
       context: fanoutService
       dockerfile: ./Dockerfile
     container_name: fanoutservice
+    hostname: fanoutservice
     ports:
       - '3002:3002'
     depends_on:

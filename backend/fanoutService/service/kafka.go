@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/ArmaanKatyal/tweetbit/backend/fanoutService/constants"
 	"github.com/ArmaanKatyal/tweetbit/backend/fanoutService/helpers"
 	"github.com/ArmaanKatyal/tweetbit/backend/fanoutService/internal"
 	"github.com/Shopify/sarama"
@@ -52,6 +53,7 @@ func newAccessLogProducer(brokerList []string, topicName string, tracerProvider 
 	config := sarama.NewConfig()
 	config.Version = sarama.V2_5_0_0
 	config.Producer.Return.Successes = true
+	config.Producer.Partitioner = sarama.NewRandomPartitioner
 
 	producer, err := sarama.NewAsyncProducer(brokerList, config)
 	if err != nil {
@@ -62,4 +64,23 @@ func newAccessLogProducer(brokerList []string, topicName string, tracerProvider 
 	log.Println("propagators: ", propagators)
 
 	return producer
+}
+
+func InitializeTopics() {
+	config := sarama.NewConfig()
+	config.Version = sarama.V2_5_0_0
+	admin, err := sarama.NewClusterAdmin([]string{helpers.GetConfigValue("kafka.bootstrap.servers")}, config)
+	if err != nil {
+		log.Printf("Failed to create cluster admin: %v", err)
+	}
+	createTopic(admin, []string{constants.CreateTweetTopic, constants.FollowUserTopic, constants.UnfollowUserTopic})
+}
+
+func createTopic(ca sarama.ClusterAdmin, topics []string) {
+	for _, topic := range topics {
+		ca.CreateTopic(topic, &sarama.TopicDetail{
+			NumPartitions:     5,
+			ReplicationFactor: 1,
+		}, false)
+	}
 }
