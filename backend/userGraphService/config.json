@@ -10,5 +10,8 @@
         "service": "userGraphService",
         "environment": "production",
         "endpoint": "http://jaeger:14268/api/traces"
+    },
+    "server": {
+        "port": ":5000"
     }
 }

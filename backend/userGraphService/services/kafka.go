@@ -17,54 +17,21 @@ import (
 
 var rdb *utils.RedisServer
 
-type Consumer struct{}
-
-func (consumer *Consumer) Setup(sarama.ConsumerGroupSession) error {
-	log.Println("Setup has been triggered")
-	return nil
-}
-
-// Cleanup is run at the end of a session, once all ConsumeClaim goroutines have exited
-func (consumer *Consumer) Cleanup(sarama.ConsumerGroupSession) error {
-	return nil
-}
-
-// ConsumeClaim must start a consumer loop of ConsumerGroupClaim's Messages().
-func (consumer *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
-	// NOTE:
-	// Do not move the code below to a goroutine.
-	// The `ConsumeClaim` itself is called within a goroutine, see:
-	// https://github.com/Shopify/sarama/blob/master/consumer_group.go#L27-L29
-	for message := range claim.Messages() {
-		handleRequests(message)
-		session.MarkMessage(message, "")
-	}
-
-	return nil
-}
-
 func StartConsumer(rdbServer *utils.RedisServer) {
 
 	rdb = rdbServer // Set global variable
 
-	consumerGroupHandler := Consumer{}
-	// Wrap instrumentation
-	propagators := propagation.TraceContext{}
-	handler := otelsarama.WrapConsumerGroupHandler(&consumerGroupHandler, otelsarama.WithPropagators(propagators))
-
 	config := sarama.NewConfig()
 	config.Version = sarama.V2_5_0_0
 	config.Consumer.Offsets.Initial = sarama.OffsetOldest
+	config.Consumer.Group.Rebalance.Strategy = sarama.BalanceStrategyRange
 
-	consumer, err := sarama.NewConsumerGroup([]string{helpers.GetConfigValue("kafka.bootstrap.servers")}, helpers.GetConfigValue("kafka.group.id"), config)
+	consumer, err := sarama.NewConsumer([]string{helpers.GetConfigValue("kafka.bootstrap.servers")}, config)
 	if err != nil {
 		log.Printf("Error while creating consumer: %v", err)
 	}
 
-	err = consumer.Consume(context.Background(), []string{constants.CreateTweetTopic, constants.FollowUserTopic, constants.UnfollowUserTopic}, handler)
-	if err != nil {
-		log.Printf("Error while consuming: %v", err)
-	}
+	handlePartitions(consumer, constants.CreateTweetTopic)
 }
 
 func handleRequests(msg *sarama.ConsumerMessage) {
@@ -84,5 +51,22 @@ func handleRequests(msg *sarama.ConsumerMessage) {
 		go HandleFollowUser(newCtx, msg.Value, rdb.GetUserClient())
 	case constants.UnfollowUserTopic:
 		go HandleUnfollowUser(newCtx, msg.Value, rdb.GetUserClient())
+	}
+}
+
+func handlePartitions(consumer sarama.Consumer, topic string) {
+	partitions, err := consumer.Partitions(topic)
+	if err != nil {
+		log.Printf("Error while getting partitions for topic %s: %v", topic, err)
+	}
+
+	for _, partition := range partitions {
+		pc, _ := consumer.ConsumePartition(constants.CreateTweetTopic, partition, sarama.OffsetOldest)
+		wrappedPc := otelsarama.WrapPartitionConsumer(pc)
+		go func(pc sarama.PartitionConsumer) {
+			for message := range pc.Messages() {
+				handleRequests(message)
+			}
+		}(wrappedPc)
 	}
 }

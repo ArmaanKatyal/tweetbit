@@ -41,5 +41,8 @@ func main() {
 		}
 	}()
 
-	services.StartConsumer(rdb)
+	go services.StartConsumer(rdb)
+
+	r := services.NewRouter()
+	r.Run(helpers.GetConfigValue("server.port"))
 }
