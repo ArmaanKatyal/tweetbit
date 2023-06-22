@@ -3,8 +3,8 @@
     "version": "1.0.0",
     "main": "src/server.ts",
     "scripts": {
-        "build": "tsc",
-        "start": "NODE_ENV=prod node ./build/server.js",
+        "build": "tsc && cp -r ./proto ./build",
+        "start": "NODE_ENV=prod node ./build/src/server.js",
         "dev": "NODE_ENV=dev ts-node ./src/server.ts",
         "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
         "coverage": "nyc yarn test",

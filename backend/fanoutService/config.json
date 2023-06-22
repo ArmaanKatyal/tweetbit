@@ -8,7 +8,7 @@
     },
     "kafka": {
         "bootstrap": {
-            "servers":"localhost:9092"
+            "servers":"kafka:9092"
         },
         "client": {
             "id": "user-graph-service"
@@ -24,6 +24,6 @@
     "otel": {
         "service": "fanoutService",
         "environment": "production",
-        "endpoint": "http://localhost:14268/api/traces"
+        "endpoint": "http://jaeger:14268/api/traces"
     }
 }

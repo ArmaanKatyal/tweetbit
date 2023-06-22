@@ -13,7 +13,7 @@ import (
 )
 
 // Add the tweet to the timeline of all the followers of the user
-func HandleCreateTweet(ctx context.Context, message []byte, rdb *utils.RedisServer) error {
+func HandleCreateTweet(ctx context.Context, message []byte, rdb *utils.RedisServer) {
 	log.Printf("Create Tweet: %s", message)
 
 	ctx, span := trace.SpanFromContext(ctx).TracerProvider().Tracer("userGraphService.services").Start(ctx, "HandleCreateTweet")
@@ -27,7 +27,6 @@ func HandleCreateTweet(ctx context.Context, message []byte, rdb *utils.RedisServ
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
 		log.Printf("Error: %v\n", err)
-		return err
 	}
 
 	// get all the followers of the user from the redis cache
@@ -35,7 +34,6 @@ func HandleCreateTweet(ctx context.Context, message []byte, rdb *utils.RedisServ
 	if err != nil {
 		log.Printf("Error: %v\n", err)
 		span.SetStatus(codes.Error, err.Error())
-		return err
 	}
 
 	tweetClient := rdb.GetTweetClient()
@@ -50,6 +48,4 @@ func HandleCreateTweet(ctx context.Context, message []byte, rdb *utils.RedisServ
 			}
 		}(follower, ctx)
 	}
-
-	return nil
 }
