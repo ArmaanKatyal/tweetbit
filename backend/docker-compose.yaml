@@ -59,6 +59,7 @@ services:
     hostname: mongo
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_DATABASE: prod
       MONGO_INITDB_ROOT_PASSWORD: root
       MONGO_PACKAGE: mongodb-org
       MONGO_REPO: repo.mongodb.org
@@ -68,13 +69,14 @@ services:
     ports:
       - '27017:27017'
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongo mongo:27017/test --quiet
+      test: echo 'db.runCommand("ping").ok' | mongo localhost:27017/test --quiet
       interval: 10s
       timeout: 10s
       retries: 5
       start_period: 40s
     volumes:
       - 'mongodb:/data/db'
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
 
   redis:
     image: redis:7.0.7-alpine
@@ -199,6 +201,34 @@ services:
         condition: service_healthy
       jaeger:
         condition: service_started
+
+  authservice:
+    build:
+      context: authservice
+      dockerfile: ./Dockerfile
+    container_name: authservice
+    hostname: authservice
+    ports:
+      - '5001:5001'
+    depends_on:
+      db:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+
+  writeservice:
+    build:
+      context: writeService
+      dockerfile: ./Dockerfile
+    container_name: writeservice
+    hostname: writeservice
+    ports:
+      - '5002:5002'
+    depends_on:
+      mongodb:
+        condition: service_started
+      db:
+        condition: service_healthy
 
 volumes:
   db:

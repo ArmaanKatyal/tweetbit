@@ -32,6 +32,8 @@ func StartConsumer(rdbServer *utils.RedisServer) {
 	}
 
 	handlePartitions(consumer, constants.CreateTweetTopic)
+	// go handlePartitions(consumer, constants.FollowUserTopic)
+	// handlePartitions(consumer, constants.UnfollowUserTopic)
 }
 
 func handleRequests(msg *sarama.ConsumerMessage) {

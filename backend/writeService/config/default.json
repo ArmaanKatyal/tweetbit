@@ -1,6 +1,6 @@
 {
     "server": {
-        "port": 3000,
+        "port": 5002,
         "host": "localhost"
     },
     "error_codes": {

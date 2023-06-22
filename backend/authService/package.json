@@ -4,7 +4,7 @@
     "main": "src/server.ts",
     "scripts": {
         "build": "tsc",
-        "start": "node ./build/server.js",
+        "start": "node ./build/src/server.js",
         "dev": "ts-node ./src/server.ts",
         "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'src/tests/**/*.ts'",
         "format": "prettier --write 'src/**/*.ts'",

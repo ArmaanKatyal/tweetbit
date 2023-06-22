@@ -10,6 +10,6 @@ const packageDef = protoLoader.loadSync(path.resolve(__dirname, `../../${PROTO_F
 const grpcObj = grpc.loadPackageDefinition(packageDef) as unknown as ProtoGrpcType;
 
 export const userClient = new grpcObj.fanout.UserService(
-    `0.0.0.0:${nodeConfig.get('grpc.fanout.port')}`,
+    `fanoutservice:${nodeConfig.get('grpc.fanout.port')}`,
     grpc.credentials.createInsecure()
 );
