@@ -3,7 +3,7 @@
         "port": "redis:6379"
     },
     "kafka": {
-        "group.id": "user-graph-service",
+        "group": "searchservice",
         "bootstrap.servers": "kafka:9092"
     },
     "otel": {

@@ -73,14 +73,17 @@ func InitializeTopics() {
 	if err != nil {
 		log.Printf("Failed to create cluster admin: %v", err)
 	}
-	createTopic(admin, []string{constants.CreateTweetTopic, constants.FollowUserTopic, constants.UnfollowUserTopic})
-}
 
-func createTopic(ca sarama.ClusterAdmin, topics []string) {
-	for _, topic := range topics {
-		ca.CreateTopic(topic, &sarama.TopicDetail{
-			NumPartitions:     5,
-			ReplicationFactor: 1,
-		}, false)
-	}
+	admin.CreateTopic(constants.CreateTweetTopic, &sarama.TopicDetail{
+		NumPartitions:     5,
+		ReplicationFactor: 1,
+	}, false)
+	admin.CreateTopic(constants.FollowUserTopic, &sarama.TopicDetail{
+		NumPartitions:     5,
+		ReplicationFactor: 1,
+	}, false)
+	admin.CreateTopic(constants.UnfollowUserTopic, &sarama.TopicDetail{
+		NumPartitions:     5,
+		ReplicationFactor: 1,
+	}, false)
 }

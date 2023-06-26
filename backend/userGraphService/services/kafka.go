@@ -32,7 +32,7 @@ func createKafkaConsumer(brokers []string) sarama.ConsumerGroup {
 	config.Consumer.Offsets.Initial = sarama.OffsetOldest
 	config.Consumer.Group.Rebalance.Strategy = sarama.BalanceStrategyRange
 
-	consumer, err := sarama.NewConsumerGroup(brokers, helpers.GetConfigValue("kafka.consumer.group.id"), config)
+	consumer, err := sarama.NewConsumerGroup(brokers, helpers.GetConfigValue("kafka.group"), config)
 	if err != nil {
 		log.Printf("Error while creating consumer: %v", err)
 	}

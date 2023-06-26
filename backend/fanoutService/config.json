@@ -11,7 +11,7 @@
             "servers":"kafka:9092"
         },
         "client": {
-            "id": "user-graph-service"
+            "id": "fanoutservice"
         },
         "acks": "all"
     },
