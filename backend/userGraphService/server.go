@@ -40,8 +40,10 @@ func main() {
 			log.Printf("Error: %v\n", err)
 		}
 	}()
+	services.RDB = rdb
 
-	go services.StartConsumer(rdb)
+	client := services.NewKafkaClient()
+	go client.ConsumeMessages()
 
 	r := services.NewRouter()
 	r.Run(helpers.GetConfigValue("server.port"))
