@@ -1,6 +1,8 @@
 package helpers
 
-import "github.com/spf13/viper"
+import (
+	"github.com/spf13/viper"
+)
 
 // returns the value of the environment variable
 func GetEnvValue(key string) string {
@@ -16,8 +18,8 @@ func GetEnvValue(key string) string {
 	return value
 }
 
-// returns the value of the config variable
-func GetConfigValue(key string) string {
+// return the value of the config variable of any type
+func LoadConfig() {
 	viper.SetConfigName("config")
 	viper.SetConfigType("json")
 	viper.AddConfigPath(".")
@@ -26,9 +28,4 @@ func GetConfigValue(key string) string {
 	if err != nil {
 		panic(err)
 	}
-	value, ok := viper.Get(key).(string)
-	if !ok {
-		return "NO_VALUE_FOUND"
-	}
-	return value
 }

@@ -13,13 +13,19 @@
         "client": {
             "id": "fanoutservice"
         },
+        "topic": {
+            "numPartitions": 6,
+            "replicationFactor": 1
+        },
+        "topics": ["createTweet", "followUser", "unfollowUser"],
         "acks": "all"
     },
     "featureFlag": {
-        "enableKafka": "true",
-        "enableCreateTweet": "true",
-        "enableFollowUser": "true",
-        "enableUnFollowUser": "true"
+        "enableKafka": true,
+        "enableCreateTweet": true,
+        "enableFollowUser": true,
+        "enableUnFollowUser": true,
+        "enableTopicCreation": true
     },
     "otel": {
         "service": "fanoutService",

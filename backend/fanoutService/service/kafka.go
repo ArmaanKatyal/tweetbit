@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/ArmaanKatyal/tweetbit/backend/fanoutService/constants"
-	"github.com/ArmaanKatyal/tweetbit/backend/fanoutService/helpers"
 	"github.com/ArmaanKatyal/tweetbit/backend/fanoutService/internal"
 	"github.com/Shopify/sarama"
+	"github.com/spf13/viper"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/Shopify/sarama/otelsarama"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -18,7 +17,7 @@ import (
 )
 
 func PublishMessage(ctx context.Context, topicName string, message []byte) {
-	tp, tperr := internal.TracerProvider(helpers.GetConfigValue("otel.endpoint"))
+	tp, tperr := internal.TracerProvider(viper.GetString("otel.endpoint"))
 	if tperr != nil {
 		log.Fatalf("Failed to create tracer provider: %v", tperr)
 	}
@@ -27,7 +26,7 @@ func PublishMessage(ctx context.Context, topicName string, message []byte) {
 	defer span.End()
 
 	propagators := propagation.TraceContext{}
-	producer := newAccessLogProducer([]string{helpers.GetConfigValue("kafka.bootstrap.servers")}, topicName, otel.GetTracerProvider(), propagators)
+	producer := newAccessLogProducer([]string{viper.GetString("kafka.bootstrap.servers")}, topicName, otel.GetTracerProvider(), propagators)
 
 	msg := sarama.ProducerMessage{
 		Topic: topicName,
@@ -67,23 +66,18 @@ func newAccessLogProducer(brokerList []string, topicName string, tracerProvider 
 }
 
 func InitializeTopics() {
+	log.Printf("Initializing topics")
 	config := sarama.NewConfig()
 	config.Version = sarama.V2_5_0_0
-	admin, err := sarama.NewClusterAdmin([]string{helpers.GetConfigValue("kafka.bootstrap.servers")}, config)
+	admin, err := sarama.NewClusterAdmin([]string{viper.GetString("kafka.bootstrap.servers")}, config)
 	if err != nil {
 		log.Printf("Failed to create cluster admin: %v", err)
 	}
 
-	admin.CreateTopic(constants.CreateTweetTopic, &sarama.TopicDetail{
-		NumPartitions:     5,
-		ReplicationFactor: 1,
-	}, false)
-	admin.CreateTopic(constants.FollowUserTopic, &sarama.TopicDetail{
-		NumPartitions:     5,
-		ReplicationFactor: 1,
-	}, false)
-	admin.CreateTopic(constants.UnfollowUserTopic, &sarama.TopicDetail{
-		NumPartitions:     5,
-		ReplicationFactor: 1,
-	}, false)
+	for _, topic := range viper.GetStringSlice("kafka.topics") {
+		admin.CreateTopic(topic, &sarama.TopicDetail{
+			NumPartitions:     viper.GetInt32("kafka.topic.numPartitions"),
+			ReplicationFactor: int16(viper.GetInt("kafka.topic.replicationFactor")),
+		}, false)
+	}
 }

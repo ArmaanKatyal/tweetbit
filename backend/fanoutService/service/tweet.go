@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/ArmaanKatyal/tweetbit/backend/fanoutService/helpers"
 	pb "github.com/ArmaanKatyal/tweetbit/backend/fanoutService/proto"
+	"github.com/spf13/viper"
 )
 
 type ITweet struct {
@@ -21,7 +21,7 @@ type ITweet struct {
 
 func (sever *FanoutServer) CreateTweet(ctx context.Context, req *pb.CreateTweetRequest) (*pb.CreateTweetResponse, error) {
 	log.Printf("CreateTweet: %v", req.String())
-	if helpers.StringToBool(helpers.GetConfigValue("featureFlag.enableKafka")) && helpers.StringToBool(helpers.GetConfigValue("featureFlag.enableCreateTweet")) {
+	if viper.GetBool("featureFlag.enableKafka") && viper.GetBool("featureFlag.enableCreateTweet") {
 		go func() {
 			topic := "createTweet"
 			value := &ITweet{req.Id, req.Content, req.UserId, req.Uuid, req.CreatedAt, req.LikesCount, req.RetweetsCount}
