@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"github.com/ArmaanKatyal/tweetbit/backend/fanoutService/helpers"
 	"github.com/ArmaanKatyal/tweetbit/backend/fanoutService/utils"
+	"github.com/spf13/viper"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/jaeger"
@@ -12,9 +12,7 @@ import (
 )
 
 var (
-	service     = helpers.GetConfigValue("otel.service")
-	environment = helpers.GetConfigValue("otel.environment")
-	id          = 1
+	id = 1
 )
 
 func TracerProvider(url string) (*tracesdk.TracerProvider, error) {
@@ -27,8 +25,8 @@ func TracerProvider(url string) (*tracesdk.TracerProvider, error) {
 		tracesdk.WithBatcher(exp),
 		tracesdk.WithResource(resource.NewWithAttributes(
 			semconv.SchemaURL,
-			semconv.ServiceName(service),
-			attribute.String("environment", environment),
+			semconv.ServiceName(viper.GetString("otel.service")),
+			attribute.String("environment", viper.GetString("otel.environment")),
 			attribute.Int64("ID", int64(id)),
 			attribute.String("version", "1.0.0"),
 			attribute.String("telemetry.sdk.language", "go"),

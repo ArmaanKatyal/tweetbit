@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/ArmaanKatyal/tweetbit/backend/fanoutService/helpers"
 	pb "github.com/ArmaanKatyal/tweetbit/backend/fanoutService/proto"
+	"github.com/spf13/viper"
 )
 
 type IFollowUser struct {
@@ -17,7 +17,7 @@ type IFollowUser struct {
 func (server *FanoutServer) FollowUser(ctx context.Context, req *pb.FollowUserRequest) (*pb.FollowUserResponse, error) {
 	log.Printf("FollowUser: %v", req.String())
 
-	if helpers.StringToBool(helpers.GetConfigValue("featureFlag.enableKafka")) && helpers.StringToBool(helpers.GetConfigValue("featureFlag.enableFollowUser")) {
+	if viper.GetBool("featureFlag.enableKafka") && viper.GetBool("featureFlag.enableFollowUser") {
 		// publish to kafka
 		go func() {
 			topic := "followUser"
@@ -35,7 +35,7 @@ func (server *FanoutServer) FollowUser(ctx context.Context, req *pb.FollowUserRe
 func (server *FanoutServer) UnfollowUser(ctx context.Context, req *pb.FollowUserRequest) (*pb.FollowUserResponse, error) {
 	log.Printf("UnFollowUser: %v", req.String())
 
-	if helpers.StringToBool(helpers.GetConfigValue("featureFlag.enableKafka")) && helpers.StringToBool(helpers.GetConfigValue("featureFlag.enableUnfollowUser")) {
+	if viper.GetBool("featureFlag.enableKafka") && viper.GetBool("featureFlag.enableUnfollowUser") {
 		go func() {
 			topic := "unfollowUser"
 			message := &IFollowUser{req.UserId, req.FollowerId}

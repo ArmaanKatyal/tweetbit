@@ -42,7 +42,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error creating elasticsearch client: %s", err)
 	}
-	go services.StartConsumer(es)
+	services.ElasticClient = es
+
+	client := services.NewKafkaClient()
+	go client.ConsumeMessages()
 
 	r := services.NewRouter(ctx, es)
 	r.Run(helpers.GetConfigValue("server.port"))

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/ArmaanKatyal/tweetbit/backend/fanoutService/helpers"
+	"github.com/spf13/viper"
 )
 
 func TestStringToBool(t *testing.T) {
@@ -34,9 +35,9 @@ func TestGetConfigValue(t *testing.T) {
 		{"server.host", "localhost"},
 		{"something", "NO_VALUE_FOUND"},
 	}
-
+	helpers.LoadConfig()
 	for _, test := range testTable {
-		if helpers.GetConfigValue(test.input) != test.expected {
+		if viper.GetString(test.input) != test.expected {
 			t.Errorf("Test failed")
 		}
 	}

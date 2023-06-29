@@ -11,15 +11,21 @@
             "servers":"kafka:9092"
         },
         "client": {
-            "id": "user-graph-service"
+            "id": "fanoutservice"
         },
+        "topic": {
+            "numPartitions": 6,
+            "replicationFactor": 1
+        },
+        "topics": ["createTweet", "followUser", "unfollowUser"],
         "acks": "all"
     },
     "featureFlag": {
-        "enableKafka": "true",
-        "enableCreateTweet": "true",
-        "enableFollowUser": "true",
-        "enableUnFollowUser": "true"
+        "enableKafka": true,
+        "enableCreateTweet": true,
+        "enableFollowUser": true,
+        "enableUnFollowUser": true,
+        "enableTopicCreation": true
     },
     "otel": {
         "service": "fanoutService",
