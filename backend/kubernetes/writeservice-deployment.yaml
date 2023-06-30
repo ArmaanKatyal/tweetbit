@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -o ./kubernetes
+    kompose.version: 1.28.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: writeservice
+  name: writeservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: writeservice
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -o ./kubernetes
+        kompose.version: 1.28.0 (HEAD)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/backend-default: "true"
+        io.kompose.service: writeservice
+    spec:
+      containers:
+        - image: backend-writeservice
+          livenessProbe:
+            exec:
+              command:
+                - curl
+                - -f
+                - http://localhost:5002/health
+          name: writeservice
+          ports:
+            - containerPort: 5002
+          resources: {}
+      hostname: writeservice
+      restartPolicy: Always
+status: {}

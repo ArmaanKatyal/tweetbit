@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -o ./kubernetes
+    kompose.version: 1.28.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: usergraphservice
+  name: usergraphservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: usergraphservice
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -o ./kubernetes
+        kompose.version: 1.28.0 (HEAD)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/backend-default: "true"
+        io.kompose.service: usergraphservice
+    spec:
+      containers:
+        - image: usergraphservice
+          livenessProbe:
+            exec:
+              command:
+                - curl
+                - -f
+                - http://localhost:5000/health
+          name: usergraphservice
+          ports:
+            - containerPort: 5003
+          resources: {}
+      hostname: usergraphservice
+      restartPolicy: Always
+status: {}

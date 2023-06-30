@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -o ./kubernetes
+    kompose.version: 1.28.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: mongodb
+  name: mongodb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: mongodb
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -o ./kubernetes
+        kompose.version: 1.28.0 (HEAD)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/backend-default: "true"
+        io.kompose.service: mongodb
+    spec:
+      containers:
+        - env:
+            - name: HOME
+              value: /data/db
+            - name: MONGO_INITDB_DATABASE
+              value: prod
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              value: root
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: root
+            - name: MONGO_MAJOR
+              value: "6"
+            - name: MONGO_PACKAGE
+              value: mongodb-org
+            - name: MONGO_REPO
+              value: repo.mongodb.org
+            - name: MONGO_VERSION
+              value: 6.0.3
+          image: mongo:6.0.3
+          livenessProbe:
+            exec:
+              command:
+                - echo 'db.runCommand("ping").ok' | mongo localhost:27017/test --quiet
+            failureThreshold: 5
+            initialDelaySeconds: 40
+            periodSeconds: 10
+            timeoutSeconds: 10
+          name: mongo1
+          ports:
+            - containerPort: 27017
+          resources: {}
+          volumeMounts:
+            - mountPath: /data/db
+              name: mongodb
+            - mountPath: /docker-entrypoint-initdb.d/init-mongo.js
+              name: mongodb-claim1
+              readOnly: true
+      hostname: mongo
+      restartPolicy: Always
+      volumes:
+        - name: mongodb
+          persistentVolumeClaim:
+            claimName: mongodb
+        - name: mongodb-claim1
+          persistentVolumeClaim:
+            claimName: mongodb-claim1
+            readOnly: true
+status: {}

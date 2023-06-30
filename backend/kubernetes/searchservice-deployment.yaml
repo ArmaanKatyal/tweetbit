@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -o ./kubernetes
+    kompose.version: 1.28.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: searchservice
+  name: searchservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: searchservice
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -o ./kubernetes
+        kompose.version: 1.28.0 (HEAD)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/backend-default: "true"
+        io.kompose.service: searchservice
+    spec:
+      containers:
+        - image: searchservice
+          livenessProbe:
+            exec:
+              command:
+                - curl
+                - -f
+                - http://localhost:5000/health
+          name: searchservice
+          ports:
+            - containerPort: 5000
+          resources: {}
+      hostname: searchservice
+      restartPolicy: Always
+status: {}
