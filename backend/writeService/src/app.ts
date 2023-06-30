@@ -46,8 +46,8 @@ if (process.env.NODE_ENV !== 'test') {
     });
 }
 
-app.get('/', (req: Request, res: Response) => {
-    res.status(200).json({ message: 'Hello World' });
+app.get('/health', (_: Request, res: Response) => {
+    res.status(200).send('OK');
 });
 
 app.use('/api/tweet', tweetRouter);

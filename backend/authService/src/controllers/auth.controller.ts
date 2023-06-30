@@ -72,7 +72,7 @@ const login = async (req: Request, res: Response) => {
             expiresIn: nodeConfig.get('token.expire.refresh'),
         }
     );
-    
+
     res.cookie('access_token', access_token, {
         httpOnly: true,
         secure: false,
@@ -89,7 +89,7 @@ const login = async (req: Request, res: Response) => {
     let checkUser = await prisma.user.findUnique({
         where: {
             email: checkAuth.email,
-        }
+        },
     });
     if (!checkUser) {
         req.log.info({
@@ -102,7 +102,7 @@ const login = async (req: Request, res: Response) => {
     }
 
     // Remove the uuid and _id from the payload
-    let { uuid, id, ...newPayload } = (checkUser as any);
+    let { uuid, id, ...newPayload } = checkUser as any;
 
     // Send token
     res.status(200).json({
@@ -155,8 +155,8 @@ const register = async (req: Request, res: Response) => {
     let checkUser = await prisma.user.findUnique({
         where: {
             email: req.body.email,
-        }
-    })
+        },
+    });
     if (checkUser) {
         req.log.info({
             message: 'User already exists',
@@ -199,9 +199,9 @@ const register = async (req: Request, res: Response) => {
                 uuid: uniqueID,
                 first_name: req.body.first_name,
                 last_name: req.body.last_name,
-                email: req.body.email
-            }
-        })
+                email: req.body.email,
+            },
+        });
     } catch (err) {
         req.log.info({
             message: 'Error while saving user to user database',

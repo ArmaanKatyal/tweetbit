@@ -71,6 +71,10 @@ app.get('/', (req, res) => {
     });
 });
 
+app.get('/health', (_: Request, res: Response) => {
+    res.status(200).send('OK');
+});
+
 app.use('/api/auth', authRouter);
 
 export { app };

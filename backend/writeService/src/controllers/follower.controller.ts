@@ -73,31 +73,36 @@ export const followUser = async (req: Request, res: Response) => {
         });
 
         const span = initTracer().startSpan('/follow');
-        opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => {
-            span.setAttribute('userId', userWithIncreasedFollowerCount.id.toString());
-            span.setAttribute('followerId', followerWithIncreasedFollowingCount.id.toString());
+        opentelemetry.context.with(
+            opentelemetry.trace.setSpan(opentelemetry.context.active(), span),
+            () => {
+                span.setAttribute('userId', userWithIncreasedFollowerCount.id.toString());
+                span.setAttribute('followerId', followerWithIncreasedFollowingCount.id.toString());
 
-            // Contact the fanout service
-            userClient.FollowUser(
-                {
-                    userId: userWithIncreasedFollowerCount.id.toString(),
-                    followerId: followerWithIncreasedFollowingCount.id.toString(),
-                },
-                (error) => {
-                    span.end();
-                    if (error) {
-                        req.log.error({
-                            message: error.message,
-                            email,
-                            uuid,
-                        });
-                        return res
-                            .status(500)
-                            .json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
+                // Contact the fanout service
+                userClient.FollowUser(
+                    {
+                        userId: userWithIncreasedFollowerCount.id.toString(),
+                        followerId: followerWithIncreasedFollowingCount.id.toString(),
+                    },
+                    (error) => {
+                        span.end();
+                        if (error) {
+                            req.log.error({
+                                message: error.message,
+                                email,
+                                uuid,
+                            });
+                            return res
+                                .status(500)
+                                .json({
+                                    error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR'),
+                                });
+                        }
                     }
-                }
-            );
-        });
+                );
+            }
+        );
 
         req.log.info({
             message: 'User followed',
@@ -178,30 +183,35 @@ export const unfollowUser = async (req: Request, res: Response) => {
         });
 
         const span = initTracer().startSpan('/unfollow');
-        opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => {
-            span.setAttribute('userId', userToUnfollowId!.toString());
-            span.setAttribute('followerId', user_id!.toString());
+        opentelemetry.context.with(
+            opentelemetry.trace.setSpan(opentelemetry.context.active(), span),
+            () => {
+                span.setAttribute('userId', userToUnfollowId!.toString());
+                span.setAttribute('followerId', user_id!.toString());
 
-            // contact the fanout service
-            userClient.UnfollowUser(
-                {
-                    userId: user_id!.toString(),
-                    followerId: userToUnfollowId!.toString(),
-                },
-                (error) => {
-                    if (error) {
-                        req.log.error({
-                            message: error.message,
-                            email,
-                            uuid,
-                        });
-                        return res
-                            .status(500)
-                            .json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
+                // contact the fanout service
+                userClient.UnfollowUser(
+                    {
+                        userId: user_id!.toString(),
+                        followerId: userToUnfollowId!.toString(),
+                    },
+                    (error) => {
+                        if (error) {
+                            req.log.error({
+                                message: error.message,
+                                email,
+                                uuid,
+                            });
+                            return res
+                                .status(500)
+                                .json({
+                                    error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR'),
+                                });
+                        }
                     }
-                }
-            );
-        });
+                );
+            }
+        );
 
         req.log.info({
             message: 'User unfollowed',
