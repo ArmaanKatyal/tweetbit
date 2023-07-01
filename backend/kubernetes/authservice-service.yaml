@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -o ./kubernetes
+    kompose.version: 1.28.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: authservice
+  name: authservice
+spec:
+  ports:
+    - name: "5001"
+      port: 5001
+      targetPort: 5001
+  selector:
+    io.kompose.service: authservice
+status:
+  loadBalancer: {}

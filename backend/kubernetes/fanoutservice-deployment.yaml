@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -o ./kubernetes
+    kompose.version: 1.28.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: fanoutservice
+  name: fanoutservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: fanoutservice
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -o ./kubernetes
+        kompose.version: 1.28.0 (HEAD)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/backend-default: "true"
+        io.kompose.service: fanoutservice
+    spec:
+      containers:
+        - image: armaan24katyal/fanoutservice
+          name: fanoutservice
+          ports:
+            - containerPort: 3002
+          resources: {}
+      hostname: fanoutservice
+      restartPolicy: Always
+status: {}

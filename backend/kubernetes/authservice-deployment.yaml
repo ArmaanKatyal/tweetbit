@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -o ./kubernetes
+    kompose.version: 1.28.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: authservice
+  name: authservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: authservice
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -o ./kubernetes
+        kompose.version: 1.28.0 (HEAD)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/backend-default: "true"
+        io.kompose.service: authservice
+    spec:
+      containers:
+        - image: armaan24katyal/authservice
+          livenessProbe:
+            exec:
+              command:
+                - curl
+                - -f
+                - http://localhost:5001/health
+          name: authservice
+          ports:
+            - containerPort: 5001
+          resources: {}
+      hostname: authservice
+      restartPolicy: Always
+status: {}

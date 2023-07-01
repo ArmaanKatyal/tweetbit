@@ -4,8 +4,8 @@ import nodeConfig from 'config';
 import prisma from '../../prisma/client';
 import { userClient } from '../services/user.service';
 
-import opentelemetry from '@opentelemetry/api';
-import { initTracer } from '../utils/opentelemetry.util';
+import opentelemetry, { SpanStatusCode } from '@opentelemetry/api';
+import { getTracer } from '../utils/opentelemetry.util';
 
 /**
  * follow the user with the given email
@@ -72,7 +72,7 @@ export const followUser = async (req: Request, res: Response) => {
             },
         });
 
-        const span = initTracer().startSpan('/follow');
+        const span = getTracer().startSpan('/follow');
         opentelemetry.context.with(
             opentelemetry.trace.setSpan(opentelemetry.context.active(), span),
             () => {
@@ -93,11 +93,9 @@ export const followUser = async (req: Request, res: Response) => {
                                 email,
                                 uuid,
                             });
-                            return res
-                                .status(500)
-                                .json({
-                                    error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR'),
-                                });
+                            return res.status(500).json({
+                                error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR'),
+                            });
                         }
                     }
                 );
@@ -109,6 +107,8 @@ export const followUser = async (req: Request, res: Response) => {
             email,
             uuid,
         });
+        span.setStatus({ code: SpanStatusCode.OK });
+        span.end();
         res.status(200).json({
             newFollower,
             user: followerWithIncreasedFollowingCount,
@@ -182,7 +182,7 @@ export const unfollowUser = async (req: Request, res: Response) => {
             },
         });
 
-        const span = initTracer().startSpan('/unfollow');
+        const span = getTracer().startSpan('/unfollow');
         opentelemetry.context.with(
             opentelemetry.trace.setSpan(opentelemetry.context.active(), span),
             () => {
@@ -202,11 +202,9 @@ export const unfollowUser = async (req: Request, res: Response) => {
                                 email,
                                 uuid,
                             });
-                            return res
-                                .status(500)
-                                .json({
-                                    error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR'),
-                                });
+                            return res.status(500).json({
+                                error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR'),
+                            });
                         }
                     }
                 );
@@ -218,7 +216,8 @@ export const unfollowUser = async (req: Request, res: Response) => {
             email,
             uuid,
         });
-
+        span.setStatus({ code: SpanStatusCode.OK });
+        span.end();
         res.status(200).json({
             deletedFollower,
             user: userWithDecreasedFollowingCount,
