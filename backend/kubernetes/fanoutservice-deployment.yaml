@@ -25,7 +25,7 @@ spec:
         io.kompose.service: fanoutservice
     spec:
       containers:
-        - image: fanoutservice
+        - image: armaan24katyal/fanoutservice
           name: fanoutservice
           ports:
             - containerPort: 3002
