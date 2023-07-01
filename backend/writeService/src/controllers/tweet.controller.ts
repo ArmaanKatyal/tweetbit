@@ -67,11 +67,9 @@ export const createTweet = async (req: Request, res: Response) => {
                                 email,
                                 uuid,
                             });
-                            return res
-                                .status(500)
-                                .json({
-                                    error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR'),
-                                });
+                            return res.status(500).json({
+                                error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR'),
+                            });
                         }
                     }
                 );

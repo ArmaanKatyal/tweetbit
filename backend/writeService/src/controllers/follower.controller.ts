@@ -93,11 +93,9 @@ export const followUser = async (req: Request, res: Response) => {
                                 email,
                                 uuid,
                             });
-                            return res
-                                .status(500)
-                                .json({
-                                    error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR'),
-                                });
+                            return res.status(500).json({
+                                error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR'),
+                            });
                         }
                     }
                 );
@@ -202,11 +200,9 @@ export const unfollowUser = async (req: Request, res: Response) => {
                                 email,
                                 uuid,
                             });
-                            return res
-                                .status(500)
-                                .json({
-                                    error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR'),
-                                });
+                            return res.status(500).json({
+                                error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR'),
+                            });
                         }
                     }
                 );
