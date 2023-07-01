@@ -9,6 +9,7 @@ import { followRouter } from './routes/follower.route';
 import expressPino from 'express-pino-logger';
 import pinoHttp from 'pino-http';
 import logger from './utils/log.util';
+import { initTracer } from './utils/opentelemetry.util';
 
 const app = express();
 dotenv.config();
@@ -36,6 +37,12 @@ app.use(
 );
 app.use(express.json());
 app.use(cookieParser());
+
+try {
+    initTracer();
+} catch (err) {
+    console.log(err);
+}
 
 const server = new Server();
 if (process.env.NODE_ENV !== 'test') {

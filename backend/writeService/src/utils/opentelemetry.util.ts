@@ -1,4 +1,4 @@
-import opentelemetry from '@opentelemetry/api';
+import { Tracer } from '@opentelemetry/api';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { Resource } from '@opentelemetry/resources';
@@ -10,12 +10,15 @@ import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 
 const collectorOptions = {
-    url: 'http://jaeger:4318/v1/traces',
+    url: 'http://localhost:4318/v1/traces',
     headers: {},
     concurrencyLimit: 10,
 };
 
+let tracer: Tracer;
+
 export function initTracer() {
+    console.log('Tracer initialized');
     const provider = new NodeTracerProvider({
         resource: new Resource({
             [SemanticResourceAttributes.SERVICE_NAME]: 'writeService',
@@ -43,5 +46,9 @@ export function initTracer() {
         ],
     });
 
-    return opentelemetry.trace.getTracer('writeService');
+    tracer = provider.getTracer('writeService');
+}
+
+export function getTracer() {
+    return tracer;
 }

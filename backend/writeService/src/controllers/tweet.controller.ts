@@ -4,8 +4,8 @@ import nodeConfig from 'config';
 import { tweetClient } from '../services/tweet.service';
 import { checkIfUserExists } from '../helpers/verifyUser.helper';
 
-import opentelemetry from '@opentelemetry/api';
-import { initTracer } from '../utils/opentelemetry.util';
+import opentelemetry, { SpanStatusCode } from '@opentelemetry/api';
+import { getTracer } from '../utils/opentelemetry.util';
 
 // Convert BigInt to string
 (BigInt.prototype as any).toJSON = function () {
@@ -24,7 +24,6 @@ export const createTweet = async (req: Request, res: Response) => {
         if (!userExists) {
             req.log.error({
                 message: 'User not found',
-                email,
                 uuid,
             });
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
@@ -43,12 +42,11 @@ export const createTweet = async (req: Request, res: Response) => {
             },
         });
 
-        const span = initTracer().startSpan('/create');
+        const span = getTracer().startSpan('createTweet');
         opentelemetry.context.with(
             opentelemetry.trace.setSpan(opentelemetry.context.active(), span),
             () => {
                 span.setAttribute('tweetId', tweet.id.toString());
-                span.setAttribute('userId', user_id!.toString());
                 span.setAttribute('uuid', tweet.uuid);
                 // contact the fanout service using gRPC
                 tweetClient.createTweet(
@@ -60,6 +58,7 @@ export const createTweet = async (req: Request, res: Response) => {
                         createdAt: tweet.created_at.toString(),
                     },
                     (err) => {
+                        span.setStatus({ code: SpanStatusCode.ERROR });
                         span.end();
                         if (err) {
                             req.log.error({
@@ -76,16 +75,19 @@ export const createTweet = async (req: Request, res: Response) => {
             }
         );
 
-        res.status(201).json(tweet);
         req.log.info({
             message: 'Tweet created',
-            email,
             uuid,
         });
+        span.setAttribute('span.kind', 'server');
+        span.setStatus({ code: SpanStatusCode.OK });
+        span.end();
+        return res.status(201).json(tweet);
     } catch (error: Error | any) {
+        console.log(error);
         req.log.error({
             message: 'Error creating tweet',
-            email,
+            error,
             uuid,
         });
         return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
