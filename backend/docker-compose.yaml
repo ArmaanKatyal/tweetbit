@@ -1,9 +1,9 @@
 version: '3.4'
 services:
-  db:
-    image: 'postgres:14.1-alpine'
-    container_name: postgres1
-    hostname: postgres
+  postgres:
+    image: 'postgres:15.3'
+    container_name: postgres
+    hostname: db
     restart: always
     environment:
       - POSTGRES_USER=postgres
@@ -13,7 +13,7 @@ services:
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
     volumes:
-      - 'db:/var/lib/postgresql/data'
+      - 'postgres:/var/lib/postgresql/data'
 
   nginx:
     image: nginx:1.24
@@ -236,7 +236,7 @@ services:
     ports:
       - '5001:5001'
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
       mongodb:
         condition: service_started
@@ -254,13 +254,13 @@ services:
     depends_on:
       mongodb:
         condition: service_started
-      db:
+      postgres:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
 
 volumes:
-  db:
+  postgres:
     driver: local
   redis:
     driver: local
