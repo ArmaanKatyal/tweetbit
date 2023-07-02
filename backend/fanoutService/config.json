@@ -31,5 +31,8 @@
         "service": "fanoutService",
         "environment": "production",
         "endpoint": "http://jaeger:14268/api/traces"
+    },
+    "gin": {
+        "port": ":5004"
     }
 }

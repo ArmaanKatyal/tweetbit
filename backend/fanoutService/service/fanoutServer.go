@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 
+	"github.com/ArmaanKatyal/tweetbit/backend/fanoutService/internal"
 	pb "github.com/ArmaanKatyal/tweetbit/backend/fanoutService/proto"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -12,14 +13,17 @@ import (
 type FanoutServer struct {
 	pb.UnimplementedTweetServiceServer
 	pb.UnimplementedUserServiceServer
+	metrics *internal.PromMetrics
 }
 
-func NewFanoutServer() *FanoutServer {
-	return &FanoutServer{}
+func NewFanoutServer(pm *internal.PromMetrics) *FanoutServer {
+	return &FanoutServer{
+		metrics: pm,
+	}
 }
 
 // Run the server
-func (server *FanoutServer) Run() error {
+func (server *FanoutServer) Run() {
 	port := viper.GetString("server.port")
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
@@ -32,5 +36,5 @@ func (server *FanoutServer) Run() error {
 	pb.RegisterUserServiceServer(s, server)
 
 	log.Printf("Server listening on port %s", port)
-	return s.Serve(lis)
+	s.Serve(lis)
 }

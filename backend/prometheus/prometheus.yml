@@ -6,8 +6,6 @@ scrape_configs:
   - job_name: prometheus
     static_configs:
       - targets: ['localhost:9090']
-  # - job_name: golang
-  #   metrics_path: /prometheus
-  #   static_configs:
-  #     - targets:
-  #       - golang:9000
+  - job_name: fanoutservice
+    static_configs:
+      - targets: ['fanoutservice:5004']

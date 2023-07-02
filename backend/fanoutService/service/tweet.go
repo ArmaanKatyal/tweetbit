@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"time"
 
 	pb "github.com/ArmaanKatyal/tweetbit/backend/fanoutService/proto"
 	"github.com/spf13/viper"
@@ -19,9 +20,10 @@ type ITweet struct {
 	RetweetsCount string `protobuf:"varint,7,opt,name=retweets_count,json=retweetsCount,proto3" json:"retweets_count,omitempty"`
 }
 
-func (sever *FanoutServer) CreateTweet(ctx context.Context, req *pb.CreateTweetRequest) (*pb.CreateTweetResponse, error) {
+func (server *FanoutServer) CreateTweet(ctx context.Context, req *pb.CreateTweetRequest) (*pb.CreateTweetResponse, error) {
 	log.Printf("CreateTweet: %v", req.String())
-	if viper.GetBool("featureFlag.enableKafka") && viper.GetBool("featureFlag.enableCreateTweet") {
+	if createTweetEnabled() {
+		start := time.Now()
 		go func() {
 			topic := "createTweet"
 			value := &ITweet{req.Id, req.Content, req.UserId, req.Uuid, req.CreatedAt, req.LikesCount, req.RetweetsCount}
@@ -31,6 +33,13 @@ func (sever *FanoutServer) CreateTweet(ctx context.Context, req *pb.CreateTweetR
 			}
 			PublishMessage(ctx, topic, jsonValue)
 		}()
+		end := time.Since(start).Seconds()
+		server.metrics.KafkaResponseTimeHistogram.WithLabelValues("createTweet").Observe(end)
+		server.metrics.KafkaTransactionTotal.WithLabelValues("createTweet").Inc()
 	}
 	return &pb.CreateTweetResponse{Success: true}, nil
+}
+
+func createTweetEnabled() bool {
+	return viper.GetBool("featureFlag.enableKafka") && viper.GetBool("featureFlag.enableCreateTweet")
 }
