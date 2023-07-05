@@ -8,14 +8,14 @@ import (
 )
 
 type PromMetrics struct {
-	prefix                             string
-	httpTransactionTotal               *prometheus.CounterVec
-	httpResponseTimeHistogram          *prometheus.HistogramVec
-	kafkaTransactionTotal              *prometheus.CounterVec
-	elasticSearchTransactionTotal      *prometheus.CounterVec
-	elasticSearchResponseTimeHistogram *prometheus.HistogramVec
-	CreateTweetResponseTimeHistogram   *prometheus.HistogramVec
-	buckets                            []float64
+	prefix                    string
+	httpTransactionTotal      *prometheus.CounterVec
+	httpResponseTimeHistogram *prometheus.HistogramVec
+	kafkaTransactionTotal     *prometheus.CounterVec
+	CreateTweetResponseTime   *prometheus.HistogramVec
+	FollowUserResponseTime    *prometheus.HistogramVec
+	UnfollowUserResponseTime  *prometheus.HistogramVec
+	buckets                   []float64
 }
 
 const (
@@ -44,18 +44,19 @@ func InitPromMetrics(prefix string, buckets []float64) *PromMetrics {
 			Name: prefix + "_kafka_transactions_total",
 			Help: "total Kafka transactions processed",
 		}, []string{"topic"}),
-		elasticSearchTransactionTotal: promauto.NewCounterVec(prometheus.CounterOpts{
-			Name: prefix + "_elasticsearch_transactions_total",
-			Help: "total Elasticsearch transactions processed",
-		}, []string{"code", "index"}),
-		elasticSearchResponseTimeHistogram: promauto.NewHistogramVec(prometheus.HistogramOpts{
-			Name:    prefix + "_elasticsearch_response_time_seconds",
-			Help:    "Histogram of response time for Elasticsearch",
-			Buckets: buckets,
-		}, []string{"code", "index"}),
-		CreateTweetResponseTimeHistogram: promauto.NewHistogramVec(prometheus.HistogramOpts{
+		CreateTweetResponseTime: promauto.NewHistogramVec(prometheus.HistogramOpts{
 			Name:    prefix + "_create_tweet_response_time_seconds",
-			Help:    "Histogram of response time for CreateTweet",
+			Help:    "Histogram of response time for create tweet handler",
+			Buckets: buckets,
+		}, []string{"code"}),
+		FollowUserResponseTime: promauto.NewHistogramVec(prometheus.HistogramOpts{
+			Name:    prefix + "_follow_user_response_time_seconds",
+			Help:    "Histogram of response time for follow user handler",
+			Buckets: buckets,
+		}, []string{"code"}),
+		UnfollowUserResponseTime: promauto.NewHistogramVec(prometheus.HistogramOpts{
+			Name:    prefix + "_unfollow_user_response_time_seconds",
+			Help:    "Histogram of response time for unfollow user handler",
 			Buckets: buckets,
 		}, []string{"code"}),
 		buckets: buckets,
@@ -79,12 +80,4 @@ func (pm *PromMetrics) IncHttpTransaction(code string, method string) {
 
 func (pm *PromMetrics) IncKafkaTransaction(topic string) {
 	pm.kafkaTransactionTotal.WithLabelValues(topic).Inc()
-}
-
-func (pm *PromMetrics) IncESTransaction(code string, index string) {
-	pm.elasticSearchTransactionTotal.WithLabelValues(code, index).Inc()
-}
-
-func (pm *PromMetrics) ObserveESResponseTime(code string, index string, time float64) {
-	pm.elasticSearchResponseTimeHistogram.WithLabelValues(code, index).Observe(time)
 }

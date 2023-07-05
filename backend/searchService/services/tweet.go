@@ -70,6 +70,7 @@ func (tc *TweetController) HandleDeleteTweet(ctx context.Context, message []byte
 
 func (tc *TweetController) postMetrics(code string, index string, topic string, seconds time.Time) {
 	tc.Metrics.ObserveESResponseTime(code, index, time.Since(seconds).Seconds())
+	tc.Metrics.CreateTweetResponseTimeHistogram.WithLabelValues(code).Observe(time.Since(seconds).Seconds())
 	tc.Metrics.IncESTransaction(code, index)
 	tc.Metrics.IncKafkaTransaction(topic)
 }

@@ -21,6 +21,7 @@ func NewRouter(ctx context.Context, es *elasticsearch.Client, pm *internal.PromM
 	defer span.End()
 
 	health := new(controllers.HealthController)
+	health.Metrics = pm
 
 	router.GET("/health", health.Status)
 	router.GET("/metrics", internal.PrometheusHandler())
