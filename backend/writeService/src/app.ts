@@ -1,4 +1,4 @@
-import express, { Response, Request, NextFunction } from 'express';
+import express, { Response, Request } from 'express';
 import * as dotenv from 'dotenv';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -10,6 +10,13 @@ import expressPino from 'express-pino-logger';
 import pinoHttp from 'pino-http';
 import logger from './utils/log.util';
 import { initTracer } from './utils/opentelemetry.util';
+import { register } from 'prom-client';
+import {
+    IncHttpTransaction,
+    MetricsCode,
+    MetricsMethod,
+    ObserveHttpResponseTime,
+} from './internal/prometheus';
 
 const app = express();
 dotenv.config();
@@ -54,7 +61,19 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 app.get('/health', (_: Request, res: Response) => {
+    let start = Date.now();
     res.status(200).send('OK');
+    IncHttpTransaction(MetricsCode.Ok, MetricsMethod.Get);
+    ObserveHttpResponseTime(MetricsCode.Ok, MetricsMethod.Get, Date.now() - start);
+});
+
+app.get('/metrics', async (req: Request, res: Response) => {
+    try {
+        res.set('Content-Type', register.contentType);
+        res.end(await register.metrics());
+    } catch (ex) {
+        res.status(500).end(ex);
+    }
 });
 
 app.use('/api/tweet', tweetRouter);

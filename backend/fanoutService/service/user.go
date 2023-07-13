@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"time"
 
 	pb "github.com/ArmaanKatyal/tweetbit/backend/fanoutService/proto"
 	"github.com/spf13/viper"
@@ -16,8 +17,8 @@ type IFollowUser struct {
 
 func (server *FanoutServer) FollowUser(ctx context.Context, req *pb.FollowUserRequest) (*pb.FollowUserResponse, error) {
 	log.Printf("FollowUser: %v", req.String())
-
-	if viper.GetBool("featureFlag.enableKafka") && viper.GetBool("featureFlag.enableFollowUser") {
+	if followUserEnabled() {
+		start := time.Now()
 		// publish to kafka
 		go func() {
 			topic := "followUser"
@@ -28,14 +29,17 @@ func (server *FanoutServer) FollowUser(ctx context.Context, req *pb.FollowUserRe
 			}
 			PublishMessage(ctx, topic, json_message)
 		}()
+		end := time.Since(start).Seconds()
+		server.metrics.KafkaResponseTimeHistogram.WithLabelValues("followUser").Observe(end)
+		server.metrics.KafkaTransactionTotal.WithLabelValues("followUser").Inc()
 	}
 	return &pb.FollowUserResponse{Success: true}, nil
 }
 
 func (server *FanoutServer) UnfollowUser(ctx context.Context, req *pb.FollowUserRequest) (*pb.FollowUserResponse, error) {
 	log.Printf("UnFollowUser: %v", req.String())
-
-	if viper.GetBool("featureFlag.enableKafka") && viper.GetBool("featureFlag.enableUnfollowUser") {
+	if unfollowUserEnabled() {
+		start := time.Now()
 		go func() {
 			topic := "unfollowUser"
 			message := &IFollowUser{req.UserId, req.FollowerId}
@@ -45,6 +49,17 @@ func (server *FanoutServer) UnfollowUser(ctx context.Context, req *pb.FollowUser
 			}
 			PublishMessage(ctx, topic, json_message)
 		}()
+		end := time.Since(start).Seconds()
+		server.metrics.KafkaResponseTimeHistogram.WithLabelValues("unfollowUser").Observe(end)
+		server.metrics.KafkaTransactionTotal.WithLabelValues("unfollowUser").Inc()
 	}
 	return &pb.FollowUserResponse{Success: true}, nil
+}
+
+func followUserEnabled() bool {
+	return viper.GetBool("featureFlag.enableKafka") && viper.GetBool("featureFlag.enableFollowUser")
+}
+
+func unfollowUserEnabled() bool {
+	return viper.GetBool("featureFlag.enableKafka") && viper.GetBool("featureFlag.enableUnfollowUser")
 }

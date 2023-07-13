@@ -6,6 +6,7 @@ import (
 
 	"github.com/ArmaanKatyal/tweetbit/backend/userGraphService/constants"
 	"github.com/ArmaanKatyal/tweetbit/backend/userGraphService/helpers"
+	"github.com/ArmaanKatyal/tweetbit/backend/userGraphService/internal"
 	"github.com/ArmaanKatyal/tweetbit/backend/userGraphService/utils"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/Shopify/sarama/otelsarama"
 	"go.opentelemetry.io/otel"
@@ -14,15 +15,19 @@ import (
 	"github.com/Shopify/sarama"
 )
 
-var RDB *utils.RedisServer
+// var RDB *utils.RedisServer
 
 type KafkaClient struct {
 	consumer sarama.ConsumerGroup
+	redis    *utils.RedisServer
+	metrics  *internal.PromMetrics
 }
 
-func NewKafkaClient() *KafkaClient {
+func NewKafkaClient(rdb *utils.RedisServer, pm *internal.PromMetrics) *KafkaClient {
 	return &KafkaClient{
 		consumer: createKafkaConsumer([]string{helpers.GetConfigValue("kafka.bootstrap.servers")}),
+		redis:    rdb,
+		metrics:  pm,
 	}
 }
 
@@ -42,6 +47,9 @@ func createKafkaConsumer(brokers []string) sarama.ConsumerGroup {
 
 func (kc *KafkaClient) ConsumeMessages() {
 	consumerGroupHandler := Consumer{}
+	consumerGroupHandler.Redis = kc.redis
+	consumerGroupHandler.Metrics = kc.metrics
+
 	// Wrap instrumentation
 	propagators := propagation.TraceContext{}
 	handler := otelsarama.WrapConsumerGroupHandler(&consumerGroupHandler, otelsarama.WithPropagators(propagators))
@@ -52,7 +60,7 @@ func (kc *KafkaClient) ConsumeMessages() {
 	}
 }
 
-func handleRequests(msg *sarama.ConsumerMessage) {
+func handleRequests(msg *sarama.ConsumerMessage, rdb *utils.RedisServer, pm *internal.PromMetrics) {
 	propagaters := propagation.TraceContext{}
 	ctx := propagaters.Extract(context.Background(), otelsarama.NewConsumerMessageCarrier(msg))
 	newCtx, span := otel.Tracer("searchService").Start(ctx, "handleRequests")
@@ -60,17 +68,29 @@ func handleRequests(msg *sarama.ConsumerMessage) {
 
 	propagaters.Inject(ctx, otelsarama.NewConsumerMessageCarrier(msg))
 
+	tc := &TweetController{
+		redis:   rdb,
+		metrics: pm,
+	}
+	uc := &UserController{
+		redis:   rdb,
+		metrics: pm,
+	}
+
 	switch string(msg.Topic) {
 	case constants.CreateTweetTopic:
-		go HandleCreateTweet(newCtx, msg.Value, RDB)
+		go tc.HandleCreateTweet(newCtx, msg.Value)
 	case constants.FollowUserTopic:
-		go HandleFollowUser(newCtx, msg.Value, RDB.GetUserClient())
+		go uc.HandleFollowUser(newCtx, msg.Value)
 	case constants.UnfollowUserTopic:
-		go HandleUnfollowUser(newCtx, msg.Value, RDB.GetUserClient())
+		go uc.HandleUnfollowUser(newCtx, msg.Value)
 	}
 }
 
-type Consumer struct{}
+type Consumer struct {
+	Redis   *utils.RedisServer
+	Metrics *internal.PromMetrics
+}
 
 func (consumer *Consumer) Setup(sarama.ConsumerGroupSession) error {
 	log.Println("Setup has been triggered")
@@ -93,7 +113,7 @@ func (consumer *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, clai
 	// 	session.MarkMessage(message, "")
 	// }
 	for message := range claim.Messages() {
-		handleRequests(message)
+		handleRequests(message, consumer.Redis, consumer.Metrics)
 		session.MarkMessage(message, "")
 	}
 

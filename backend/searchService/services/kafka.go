@@ -6,6 +6,7 @@ import (
 
 	"github.com/ArmaanKatyal/tweetbit/backend/searchService/constants"
 	"github.com/ArmaanKatyal/tweetbit/backend/searchService/helpers"
+	"github.com/ArmaanKatyal/tweetbit/backend/searchService/internal"
 	"github.com/Shopify/sarama"
 	"github.com/elastic/go-elasticsearch/v7"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/Shopify/sarama/otelsarama"
@@ -13,15 +14,17 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 )
 
-var ElasticClient *elasticsearch.Client
-
 type KafkaClient struct {
 	consumer sarama.ConsumerGroup
+	metrics  *internal.PromMetrics
+	elastic  *elasticsearch.Client
 }
 
-func NewKafkaClient() *KafkaClient {
+func NewKafkaClient(pm *internal.PromMetrics, es *elasticsearch.Client) *KafkaClient {
 	return &KafkaClient{
 		consumer: createKafkaConsumer([]string{helpers.GetConfigValue("kafka.bootstrap.servers")}),
+		metrics:  pm,
+		elastic:  es,
 	}
 }
 
@@ -41,6 +44,8 @@ func createKafkaConsumer(brokers []string) sarama.ConsumerGroup {
 
 func (kc *KafkaClient) ConsumeMessages() {
 	consumerGroupHandler := Consumer{}
+	consumerGroupHandler.Elastic = kc.elastic
+	consumerGroupHandler.Metrics = kc.metrics
 	// Wrap instrumentation
 	propagators := propagation.TraceContext{}
 	handler := otelsarama.WrapConsumerGroupHandler(&consumerGroupHandler, otelsarama.WithPropagators(propagators))
@@ -51,7 +56,7 @@ func (kc *KafkaClient) ConsumeMessages() {
 	}
 }
 
-func handleRequests(msg *sarama.ConsumerMessage) {
+func handleRequests(msg *sarama.ConsumerMessage, es *elasticsearch.Client, pm *internal.PromMetrics) {
 	propagaters := propagation.TraceContext{}
 	ctx := propagaters.Extract(context.Background(), otelsarama.NewConsumerMessageCarrier(msg))
 	newCtx, span := otel.Tracer("searchService").Start(ctx, "handleRequests")
@@ -59,16 +64,22 @@ func handleRequests(msg *sarama.ConsumerMessage) {
 
 	propagaters.Inject(ctx, otelsarama.NewConsumerMessageCarrier(msg))
 
+	tc := new(TweetController)
+	tc.Elastic = es
+	tc.Metrics = pm
+
 	switch string(msg.Topic) {
 	case constants.CreateTweetTopic:
-		go HandleCreateTweet(newCtx, msg.Value, ElasticClient)
+		go tc.HandleCreateTweet(newCtx, msg.Value)
 	case constants.DeleteTweetTopic:
-		go HandleDeleteTweet(newCtx, msg.Value, ElasticClient)
+		go tc.HandleDeleteTweet(newCtx, msg.Value)
 	}
-
 }
 
-type Consumer struct{}
+type Consumer struct {
+	Elastic *elasticsearch.Client
+	Metrics *internal.PromMetrics
+}
 
 func (consumer *Consumer) Setup(sarama.ConsumerGroupSession) error {
 	log.Println("Setup has been triggered")
@@ -91,7 +102,7 @@ func (consumer *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, clai
 	// 	session.MarkMessage(message, "")
 	// }
 	for message := range claim.Messages() {
-		handleRequests(message)
+		handleRequests(message, consumer.Elastic, consumer.Metrics)
 		session.MarkMessage(message, "")
 	}
 

@@ -9,11 +9,14 @@ import (
 	"github.com/ArmaanKatyal/tweetbit/backend/searchService/internal"
 	"github.com/ArmaanKatyal/tweetbit/backend/searchService/services"
 	"github.com/elastic/go-elasticsearch/v7"
+	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 )
 
 func main() {
+
+	pm := internal.InitPromMetrics("searchservice", prometheus.LinearBuckets(0, 5, 20))
 
 	tp, err := internal.TracerProvider(helpers.GetConfigValue("otel.endpoint"))
 	if err != nil {
@@ -42,11 +45,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error creating elasticsearch client: %s", err)
 	}
-	services.ElasticClient = es
 
-	client := services.NewKafkaClient()
+	// create kafka client and start consuming messages
+	client := services.NewKafkaClient(pm, es)
 	go client.ConsumeMessages()
 
-	r := services.NewRouter(ctx, es)
+	// start the server
+	r := services.NewRouter(ctx, es, pm)
 	r.Run(helpers.GetConfigValue("server.port"))
 }

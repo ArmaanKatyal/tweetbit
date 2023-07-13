@@ -9,11 +9,15 @@ import (
 	"github.com/ArmaanKatyal/tweetbit/backend/userGraphService/internal"
 	"github.com/ArmaanKatyal/tweetbit/backend/userGraphService/services"
 	"github.com/ArmaanKatyal/tweetbit/backend/userGraphService/utils"
+	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 )
 
 func main() {
+
+	pm := internal.InitPromMetrics("usergraphservice", prometheus.LinearBuckets(0, 5, 20))
+
 	tp, err := internal.TracerProvider(helpers.GetConfigValue("otel.endpoint"))
 	if err != nil {
 		log.Printf("Error while creating tracer provider: %v", err)
@@ -40,11 +44,10 @@ func main() {
 			log.Printf("Error: %v\n", err)
 		}
 	}()
-	services.RDB = rdb
 
-	client := services.NewKafkaClient()
+	client := services.NewKafkaClient(rdb, pm)
 	go client.ConsumeMessages()
 
-	r := services.NewRouter()
+	r := services.NewRouter(pm)
 	r.Run(helpers.GetConfigValue("server.port"))
 }

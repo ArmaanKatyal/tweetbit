@@ -6,6 +6,7 @@ import { userClient } from '../services/user.service';
 
 import opentelemetry, { SpanStatusCode } from '@opentelemetry/api';
 import { getTracer } from '../utils/opentelemetry.util';
+import { MetricsCode, MetricsMethod, collectMetrics } from '../internal/prometheus';
 
 /**
  * follow the user with the given email
@@ -13,6 +14,7 @@ import { getTracer } from '../utils/opentelemetry.util';
  * @param res {Response}
  */
 export const followUser = async (req: Request, res: Response) => {
+    let start = Date.now();
     let { email, uuid } = (req as any).token;
     let { userEmail: userToFollowEmail } = req.params;
     try {
@@ -23,6 +25,12 @@ export const followUser = async (req: Request, res: Response) => {
                 email,
                 uuid,
             });
+            collectMetrics(
+                'followUser',
+                MetricsCode.BadRequest,
+                MetricsMethod.Post,
+                Date.now() - start
+            );
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
 
@@ -33,6 +41,12 @@ export const followUser = async (req: Request, res: Response) => {
                 email,
                 uuid,
             });
+            collectMetrics(
+                'followUser',
+                MetricsCode.BadRequest,
+                MetricsMethod.Post,
+                Date.now() - start
+            );
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
 
@@ -93,6 +107,12 @@ export const followUser = async (req: Request, res: Response) => {
                                 email,
                                 uuid,
                             });
+                            collectMetrics(
+                                'followUser',
+                                MetricsCode.InternalServerError,
+                                MetricsMethod.Post,
+                                Date.now() - start
+                            );
                             return res.status(500).json({
                                 error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR'),
                             });
@@ -109,6 +129,7 @@ export const followUser = async (req: Request, res: Response) => {
         });
         span.setStatus({ code: SpanStatusCode.OK });
         span.end();
+        collectMetrics('followUser', MetricsCode.Ok, MetricsMethod.Post, Date.now() - start);
         res.status(200).json({
             newFollower,
             user: followerWithIncreasedFollowingCount,
@@ -120,6 +141,12 @@ export const followUser = async (req: Request, res: Response) => {
             email,
             uuid,
         });
+        collectMetrics(
+            'followUser',
+            MetricsCode.InternalServerError,
+            MetricsMethod.Post,
+            Date.now() - start
+        );
         return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
     }
 };
@@ -130,6 +157,7 @@ export const followUser = async (req: Request, res: Response) => {
  * @param res {Response}
  */
 export const unfollowUser = async (req: Request, res: Response) => {
+    let start = Date.now();
     let { email, uuid } = (req as any).token;
     let { userEmail: userToUnfollowEmail } = req.params;
     try {
@@ -140,6 +168,12 @@ export const unfollowUser = async (req: Request, res: Response) => {
                 email,
                 uuid,
             });
+            collectMetrics(
+                'unfollowUser',
+                MetricsCode.BadRequest,
+                MetricsMethod.Post,
+                Date.now() - start
+            );
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
 
@@ -150,6 +184,12 @@ export const unfollowUser = async (req: Request, res: Response) => {
                 email,
                 uuid,
             });
+            collectMetrics(
+                'unfollowUser',
+                MetricsCode.BadRequest,
+                MetricsMethod.Post,
+                Date.now() - start
+            );
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
 
@@ -202,6 +242,12 @@ export const unfollowUser = async (req: Request, res: Response) => {
                                 email,
                                 uuid,
                             });
+                            collectMetrics(
+                                'unfollowUser',
+                                MetricsCode.InternalServerError,
+                                MetricsMethod.Post,
+                                Date.now() - start
+                            );
                             return res.status(500).json({
                                 error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR'),
                             });
@@ -218,6 +264,7 @@ export const unfollowUser = async (req: Request, res: Response) => {
         });
         span.setStatus({ code: SpanStatusCode.OK });
         span.end();
+        collectMetrics('unfollowUser', MetricsCode.Ok, MetricsMethod.Post, Date.now() - start);
         res.status(200).json({
             deletedFollower,
             user: userWithDecreasedFollowingCount,
@@ -229,6 +276,12 @@ export const unfollowUser = async (req: Request, res: Response) => {
             email,
             uuid,
         });
+        collectMetrics(
+            'unfollowUser',
+            MetricsCode.InternalServerError,
+            MetricsMethod.Post,
+            Date.now() - start
+        );
         return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
     }
 };
