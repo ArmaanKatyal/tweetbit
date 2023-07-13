@@ -6,6 +6,12 @@ import { checkIfUserExists } from '../helpers/verifyUser.helper';
 
 import opentelemetry, { SpanStatusCode } from '@opentelemetry/api';
 import { getTracer } from '../utils/opentelemetry.util';
+import {
+    MetricsCode,
+    MetricsMethod,
+    collectMetrics,
+    createTweetResponseTimeHistogram,
+} from '../internal/prometheus';
 
 // Convert BigInt to string
 (BigInt.prototype as any).toJSON = function () {
@@ -16,6 +22,7 @@ import { getTracer } from '../utils/opentelemetry.util';
 // 1. Tweet is stored in the sql database on the users timeline
 // 2. Contacts the fanoutService using gRPC to publish the tweet to the fanout queue
 export const createTweet = async (req: Request, res: Response) => {
+    let start = Date.now();
     // create a tweet for the user in the database
     let { email, uuid } = (req as any).token;
     let { content } = req.body;
@@ -26,6 +33,12 @@ export const createTweet = async (req: Request, res: Response) => {
                 message: 'User not found',
                 uuid,
             });
+            collectMetrics(
+                'createTweet',
+                MetricsCode.BadRequest,
+                MetricsMethod.Post,
+                Date.now() - start
+            );
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
 
@@ -66,6 +79,12 @@ export const createTweet = async (req: Request, res: Response) => {
                                 email,
                                 uuid,
                             });
+                            collectMetrics(
+                                'createTweet',
+                                MetricsCode.InternalServerError,
+                                MetricsMethod.Post,
+                                Date.now() - start
+                            );
                             return res.status(500).json({
                                 error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR'),
                             });
@@ -82,6 +101,7 @@ export const createTweet = async (req: Request, res: Response) => {
         span.setAttribute('span.kind', 'server');
         span.setStatus({ code: SpanStatusCode.OK });
         span.end();
+        collectMetrics('createTweet', MetricsCode.Ok, MetricsMethod.Post, Date.now() - start);
         return res.status(201).json(tweet);
     } catch (error: Error | any) {
         console.log(error);
@@ -90,6 +110,12 @@ export const createTweet = async (req: Request, res: Response) => {
             error,
             uuid,
         });
+        collectMetrics(
+            'createTweet',
+            MetricsCode.InternalServerError,
+            MetricsMethod.Post,
+            Date.now() - start
+        );
         return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
     }
 };
@@ -100,6 +126,7 @@ export const createTweet = async (req: Request, res: Response) => {
  * @param res Response
  */
 export const deleteTweet = async (req: Request, res: Response) => {
+    let start = Date.now();
     let { email, uuid } = (req as any).token;
     let { tweetId } = req.params;
     try {
@@ -110,6 +137,12 @@ export const deleteTweet = async (req: Request, res: Response) => {
                 email,
                 uuid,
             });
+            collectMetrics(
+                'deleteTweet',
+                MetricsCode.BadRequest,
+                MetricsMethod.Post,
+                Date.now() - start
+            );
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
 
@@ -131,6 +164,7 @@ export const deleteTweet = async (req: Request, res: Response) => {
                 tweet_id: parseInt(tweetId, 10),
             },
         });
+        collectMetrics('deleteTweet', MetricsCode.Ok, MetricsMethod.Post, Date.now() - start);
         res.status(200).json({ tweet, deleted_tweet_likes, deleted_tweet_comments });
         req.log.info({
             message: 'Tweet deleted',
@@ -143,6 +177,12 @@ export const deleteTweet = async (req: Request, res: Response) => {
             email,
             uuid,
         });
+        collectMetrics(
+            'deleteTweet',
+            MetricsCode.InternalServerError,
+            MetricsMethod.Post,
+            Date.now() - start
+        );
         return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
     }
 };
@@ -153,6 +193,7 @@ export const deleteTweet = async (req: Request, res: Response) => {
  * @param res {Response}
  */
 export const likeTweet = async (req: Request, res: Response) => {
+    let start = Date.now();
     let { email, uuid } = (req as any).token;
     let { tweetId } = req.params;
     try {
@@ -164,6 +205,12 @@ export const likeTweet = async (req: Request, res: Response) => {
                 email,
                 uuid,
             });
+            collectMetrics(
+                'likeTweet',
+                MetricsCode.BadRequest,
+                MetricsMethod.Post,
+                Date.now() - start
+            );
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
         // check if the user has already liked the tweet
@@ -180,6 +227,12 @@ export const likeTweet = async (req: Request, res: Response) => {
                 email,
                 uuid,
             });
+            collectMetrics(
+                'likeTweet',
+                MetricsCode.BadRequest,
+                MetricsMethod.Post,
+                Date.now() - start
+            );
             return res
                 .status(400)
                 .json({ error: nodeConfig.get('error_codes.TWEET_ALREADY_LIKED') });
@@ -216,6 +269,7 @@ export const likeTweet = async (req: Request, res: Response) => {
             email,
             uuid,
         });
+        collectMetrics('likeTweet', MetricsCode.Ok, MetricsMethod.Post, Date.now() - start);
         res.status(200).json(tweet);
     } catch (error: Error | any) {
         req.log.error({
@@ -224,6 +278,12 @@ export const likeTweet = async (req: Request, res: Response) => {
             uuid,
             error,
         });
+        collectMetrics(
+            'likeTweet',
+            MetricsCode.InternalServerError,
+            MetricsMethod.Post,
+            Date.now() - start
+        );
         return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
     }
 };
@@ -234,6 +294,7 @@ export const likeTweet = async (req: Request, res: Response) => {
  * @param res
  */
 export const unlikeTweet = async (req: Request, res: Response) => {
+    let start = Date.now();
     let { email, uuid } = (req as any).token;
     let { tweetId } = req.params;
     try {
@@ -244,6 +305,12 @@ export const unlikeTweet = async (req: Request, res: Response) => {
                 email,
                 uuid,
             });
+            collectMetrics(
+                'unlikeTweet',
+                MetricsCode.BadRequest,
+                MetricsMethod.Post,
+                Date.now() - start
+            );
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
 
@@ -261,6 +328,12 @@ export const unlikeTweet = async (req: Request, res: Response) => {
                 email,
                 uuid,
             });
+            collectMetrics(
+                'unlikeTweet',
+                MetricsCode.BadRequest,
+                MetricsMethod.Post,
+                Date.now() - start
+            );
             return res.status(400).json({ error: nodeConfig.get('error_codes.TWEET_NOT_LIKED') });
         }
 
@@ -283,6 +356,7 @@ export const unlikeTweet = async (req: Request, res: Response) => {
                 user_id: user_id!,
             },
         });
+        collectMetrics('unlikeTweet', MetricsCode.Ok, MetricsMethod.Post, Date.now() - start);
         res.status(200).json({ tweet, deleted_like });
     } catch (error: Error | any) {
         console.log(error);
@@ -292,6 +366,12 @@ export const unlikeTweet = async (req: Request, res: Response) => {
             uuid,
             error,
         });
+        collectMetrics(
+            'unlikeTweet',
+            MetricsCode.InternalServerError,
+            MetricsMethod.Post,
+            Date.now() - start
+        );
         return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
     }
 };
@@ -302,6 +382,7 @@ export const unlikeTweet = async (req: Request, res: Response) => {
  * @param res
  */
 export const retweetTweet = async (req: Request, res: Response) => {
+    let start = Date.now();
     let { email, uuid } = (req as any).token;
     let { tweetId } = req.params;
     try {
@@ -313,6 +394,12 @@ export const retweetTweet = async (req: Request, res: Response) => {
                 email,
                 uuid,
             });
+            collectMetrics(
+                'retweetTweet',
+                MetricsCode.BadRequest,
+                MetricsMethod.Post,
+                Date.now() - start
+            );
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
 
@@ -329,6 +416,12 @@ export const retweetTweet = async (req: Request, res: Response) => {
                 email,
                 uuid,
             });
+            collectMetrics(
+                'retweetTweet',
+                MetricsCode.BadRequest,
+                MetricsMethod.Post,
+                Date.now() - start
+            );
             return res.status(400).json({ error: nodeConfig.get('error_codes.TWEET_NOT_FOUND') });
         }
 
@@ -338,6 +431,12 @@ export const retweetTweet = async (req: Request, res: Response) => {
                 email,
                 uuid,
             });
+            collectMetrics(
+                'retweetTweet',
+                MetricsCode.BadRequest,
+                MetricsMethod.Post,
+                Date.now() - start
+            );
             return res.status(400).json({ error: nodeConfig.get('error_codes.TWEET_OWNER') });
         }
 
@@ -355,6 +454,12 @@ export const retweetTweet = async (req: Request, res: Response) => {
                 email,
                 uuid,
             });
+            collectMetrics(
+                'retweetTweet',
+                MetricsCode.BadRequest,
+                MetricsMethod.Post,
+                Date.now() - start
+            );
             return res
                 .status(400)
                 .json({ error: nodeConfig.get('error_codes.TWEET_ALREADY_RETWEETED') });
@@ -399,6 +504,12 @@ export const retweetTweet = async (req: Request, res: Response) => {
                         email,
                         uuid,
                     });
+                    collectMetrics(
+                        'retweetTweet',
+                        MetricsCode.InternalServerError,
+                        MetricsMethod.Post,
+                        Date.now() - start
+                    );
                     return res
                         .status(500)
                         .json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
@@ -411,6 +522,7 @@ export const retweetTweet = async (req: Request, res: Response) => {
             email,
             uuid,
         });
+        collectMetrics('retweetTweet', MetricsCode.Ok, MetricsMethod.Post, Date.now() - start);
         res.status(200).json(existingTweet);
     } catch (error: Error | any) {
         req.log.error({
@@ -418,6 +530,12 @@ export const retweetTweet = async (req: Request, res: Response) => {
             email,
             uuid,
         });
+        collectMetrics(
+            'retweetTweet',
+            MetricsCode.InternalServerError,
+            MetricsMethod.Post,
+            Date.now() - start
+        );
         return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
     }
 };
@@ -428,6 +546,7 @@ export const retweetTweet = async (req: Request, res: Response) => {
  * @param res
  */
 export const commentTweet = async (req: Request, res: Response) => {
+    let start = Date.now();
     let { email, uuid } = (req as any).token;
     let { tweetId } = req.params;
     let { content } = req.body;
@@ -440,6 +559,12 @@ export const commentTweet = async (req: Request, res: Response) => {
                 email,
                 uuid,
             });
+            collectMetrics(
+                'commentTweet',
+                MetricsCode.BadRequest,
+                MetricsMethod.Post,
+                Date.now() - start
+            );
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
 
@@ -455,6 +580,12 @@ export const commentTweet = async (req: Request, res: Response) => {
                 email,
                 uuid,
             });
+            collectMetrics(
+                'commentTweet',
+                MetricsCode.BadRequest,
+                MetricsMethod.Post,
+                Date.now() - start
+            );
             return res.status(400).json({ error: nodeConfig.get('error_codes.TWEET_NOT_FOUND') });
         }
 
@@ -472,6 +603,12 @@ export const commentTweet = async (req: Request, res: Response) => {
                 email,
                 uuid,
             });
+            collectMetrics(
+                'commentTweet',
+                MetricsCode.BadRequest,
+                MetricsMethod.Post,
+                Date.now() - start
+            );
             return res
                 .status(400)
                 .json({ error: nodeConfig.get('error_codes.USER_ALREADY_COMMENTED') });
@@ -493,6 +630,8 @@ export const commentTweet = async (req: Request, res: Response) => {
                 },
             },
         });
+
+        collectMetrics('commentTweet', MetricsCode.Ok, MetricsMethod.Post, Date.now() - start);
         res.status(200).json(comment);
 
         // TODO: contact the fanout service using gRPC
@@ -502,6 +641,12 @@ export const commentTweet = async (req: Request, res: Response) => {
             email,
             uuid,
         });
+        collectMetrics(
+            'commentTweet',
+            MetricsCode.InternalServerError,
+            MetricsMethod.Post,
+            Date.now() - start
+        );
         return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
     }
 };
