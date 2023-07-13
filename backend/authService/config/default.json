@@ -19,5 +19,8 @@
             "access": "1h",
             "refresh": "7d"
         }
+    },
+    "prometheus": {
+        "prefix": "auth_service_"
     }
 }

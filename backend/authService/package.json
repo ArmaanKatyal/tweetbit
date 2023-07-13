@@ -4,8 +4,8 @@
     "main": "src/server.ts",
     "scripts": {
         "build": "tsc",
-        "start": "node ./build/src/server.js",
-        "dev": "ts-node ./src/server.ts",
+        "start": "NODE_ENV=prod node ./build/src/server.js",
+        "dev": "NODE_ENV=dev ts-node ./src/server.ts",
         "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'src/tests/**/*.ts'",
         "format": "prettier --write 'src/**/*.ts'",
         "coverage": "nyc yarn test"
@@ -41,6 +41,7 @@
         "pino": "^8.8.0",
         "pino-http": "^8.3.2",
         "pino-pretty": "^9.1.1",
+        "prom-client": "^14.2.0",
         "uuid": "^9.0.0"
     },
     "devDependencies": {

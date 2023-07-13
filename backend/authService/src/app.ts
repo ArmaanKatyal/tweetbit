@@ -9,15 +9,22 @@ import pinoHttp from 'pino-http';
 
 // import routes
 import { authRouter } from './routes/auth.route';
+import { register } from 'prom-client';
+import {
+    IncHttpTransaction,
+    MetricsCode,
+    MetricsMethod,
+    ObserveHttpResponseTime,
+} from './internal/prometheus';
 
 const app = express();
 dotenv.config();
 mongoose.set('strictQuery', true);
 
 const run = async () => {
-    if (process.env.VERSION === 'dev') {
+    if (process.env.NODE_ENV === 'dev') {
         await connect(process.env.MONGO_URI_DEV!);
-    } else if (process.env.VERSION === 'prod') {
+    } else if (process.env.NODE_ENV === 'prod') {
         await connect(process.env.MONGO_URI_PROD!);
     } else {
         console.error('No version specified');
@@ -72,7 +79,19 @@ app.get('/', (req, res) => {
 });
 
 app.get('/health', (_: Request, res: Response) => {
+    let start = Date.now();
     res.status(200).send('OK');
+    IncHttpTransaction(MetricsCode.Ok, MetricsMethod.Get);
+    ObserveHttpResponseTime(MetricsCode.Ok, MetricsMethod.Get, Date.now() - start);
+});
+
+app.get('/metrics', async (req: Request, res: Response) => {
+    try {
+        res.set('Content-Type', register.contentType);
+        res.end(await register.metrics());
+    } catch (ex) {
+        res.status(500).end(ex);
+    }
 });
 
 app.use('/api/auth', authRouter);
