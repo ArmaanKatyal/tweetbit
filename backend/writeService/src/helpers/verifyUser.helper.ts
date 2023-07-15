@@ -1,6 +1,7 @@
+import { User } from '.prisma/client';
 import prisma from '../../prisma/client';
 
-export const checkIfUserExists = async (email: string): Promise<[boolean, number | null]> => {
+export const checkIfUserExists = async (email: string): Promise<[boolean, User | null]> => {
     let user = await prisma.user.findUnique({
         where: {
             email,
@@ -9,5 +10,5 @@ export const checkIfUserExists = async (email: string): Promise<[boolean, number
     if (!user) {
         return [false, null];
     }
-    return [true, user.id];
+    return [true, user];
 };

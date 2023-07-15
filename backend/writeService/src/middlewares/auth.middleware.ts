@@ -2,6 +2,7 @@ import jwt, { Secret, JwtPayload } from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 import * as dotenv from 'dotenv';
 import nodeConfig from 'config';
+import Logger from '../internal/Logger';
 dotenv.config();
 
 // Define the secret key
@@ -24,7 +25,7 @@ export interface TokenPayload {
 export const verifyToken = (req: Request, res: Response, next: NextFunction) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     if (!token) {
-        req.log.error({
+        Logger.error({
             message: 'Token not found',
         });
         return res.status(401).json({ error: nodeConfig.get('error_codes.TOKEN_NOT_FOUND') });
@@ -32,7 +33,7 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
     try {
         const decoded = jwt.verify(token, SECRET_KEY) as TokenPayload;
         if (decoded.type !== 'access') {
-            req.log.error({
+            Logger.error({
                 message: 'Invalid token',
                 email: decoded.email,
                 uuid: decoded.uuid,
@@ -43,25 +44,23 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
         next();
     } catch (error: Error | any) {
         if (error instanceof jwt.TokenExpiredError) {
-            req.log.error({
+            Logger.error({
                 message: 'Token expired',
                 err: error,
             });
             return res.status(401).json({ error: nodeConfig.get('error_codes.TOKEN_EXPIRED') });
         } else if (error instanceof jwt.JsonWebTokenError) {
-            req.log.error({
+            Logger.error({
                 message: 'Invalid token',
                 err: error,
             });
             return res.status(401).json({ error: nodeConfig.get('error_codes.INVALID_TOKEN') });
         } else {
-            req.log.error({
+            Logger.error({
                 message: 'Internal server error',
                 err: error,
             });
-            return res
-                .status(500)
-                .json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
+            return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
         }
     }
 };

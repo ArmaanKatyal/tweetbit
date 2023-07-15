@@ -55,10 +55,7 @@ export interface TweetServiceClient extends grpc.Client {
 }
 
 export interface TweetServiceHandlers extends grpc.UntypedServiceImplementation {
-    CreateTweet: grpc.handleUnaryCall<
-        _fanout_CreateTweetRequest__Output,
-        _fanout_CreateTweetResponse
-    >;
+    CreateTweet: grpc.handleUnaryCall<_fanout_CreateTweetRequest__Output, _fanout_CreateTweetResponse>;
 }
 
 export interface TweetServiceDefinition extends grpc.ServiceDefinition {

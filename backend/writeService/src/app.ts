@@ -11,12 +11,7 @@ import pinoHttp from 'pino-http';
 import logger from './utils/log.util';
 import { initTracer } from './utils/opentelemetry.util';
 import { register } from 'prom-client';
-import {
-    IncHttpTransaction,
-    MetricsCode,
-    MetricsMethod,
-    ObserveHttpResponseTime,
-} from './internal/prometheus';
+import { IncHttpTransaction, MetricsCode, MetricsMethod, ObserveHttpResponseTime } from './internal/prometheus';
 
 const app = express();
 dotenv.config();

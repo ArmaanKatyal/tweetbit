@@ -47,7 +47,8 @@
         "prom-client": "^14.2.0",
         "supertest": "^6.3.3",
         "ts-proto": "^1.139.0",
-        "uuid": "^9.0.0"
+        "uuid": "^9.0.0",
+        "winston": "^3.10.0"
     },
     "devDependencies": {
         "@types/chai": "^4.3.4",
