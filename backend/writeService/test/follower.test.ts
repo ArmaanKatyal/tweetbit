@@ -68,7 +68,7 @@ describe('/api/user', async () => {
 
     describe('[POST] /unfollow/:userEmail', () => {
         before(async () => {
-            let [_, user_id] = await checkIfUserExists(userEmail);
+            let [_, user] = await checkIfUserExists(userEmail);
             await prisma.user_Followers.create({
                 data: {
                     follower: {
@@ -76,7 +76,7 @@ describe('/api/user', async () => {
                             id: test_user.id,
                         },
                     },
-                    user_id: user_id!,
+                    user_id: user?.id!,
                 },
             });
         });

@@ -97,12 +97,7 @@ export const ObserveHttpResponseTime = (code: MetricsCode, method: MetricsMethod
     httpResponseTimeHistogram.labels(code, method).observe(time);
 };
 
-export const collectMetrics = (
-    functionName: string,
-    code: MetricsCode,
-    method: MetricsMethod,
-    time: number
-) => {
+export const collectMetrics = (functionName: string, code: MetricsCode, method: MetricsMethod, time: number) => {
     IncHttpTransaction(code, method);
     ObserveHttpResponseTime(code, method, Date.now() - time);
     ObserveMethodResponseTime(functionName, code, time);

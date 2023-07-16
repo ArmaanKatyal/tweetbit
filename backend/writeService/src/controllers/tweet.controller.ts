@@ -6,12 +6,8 @@ import { checkIfUserExists } from '../helpers/verifyUser.helper';
 
 import opentelemetry, { SpanStatusCode } from '@opentelemetry/api';
 import { getTracer } from '../utils/opentelemetry.util';
-import {
-    MetricsCode,
-    MetricsMethod,
-    collectMetrics,
-    createTweetResponseTimeHistogram,
-} from '../internal/prometheus';
+import { MetricsCode, MetricsMethod, collectMetrics } from '../internal/prometheus';
+import Logger from '../internal/Logger';
 
 // Convert BigInt to string
 (BigInt.prototype as any).toJSON = function () {
@@ -27,18 +23,13 @@ export const createTweet = async (req: Request, res: Response) => {
     let { email, uuid } = (req as any).token;
     let { content } = req.body;
     try {
-        let [userExists, user_id] = await checkIfUserExists(email);
+        let [userExists, user] = await checkIfUserExists(email);
         if (!userExists) {
-            req.log.error({
+            Logger.error({
                 message: 'User not found',
                 uuid,
             });
-            collectMetrics(
-                'createTweet',
-                MetricsCode.BadRequest,
-                MetricsMethod.Post,
-                Date.now() - start
-            );
+            collectMetrics('createTweet', MetricsCode.BadRequest, MetricsMethod.Post, Date.now() - start);
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
 
@@ -49,52 +40,49 @@ export const createTweet = async (req: Request, res: Response) => {
                 content,
                 user: {
                     connect: {
-                        id: user_id!,
+                        id: user?.id!,
                     },
                 },
             },
         });
 
         const span = getTracer().startSpan('createTweet');
-        opentelemetry.context.with(
-            opentelemetry.trace.setSpan(opentelemetry.context.active(), span),
-            () => {
-                span.setAttribute('tweetId', tweet.id.toString());
-                span.setAttribute('uuid', tweet.uuid);
-                // contact the fanout service using gRPC
-                tweetClient.createTweet(
-                    {
-                        ...tweet,
-                        id: tweet.id.toString(),
-                        likesCount: tweet.likes_count.toString(),
-                        retweetsCount: tweet.retweets_count.toString(),
-                        createdAt: tweet.created_at.toString(),
-                    },
-                    (err) => {
-                        span.setStatus({ code: SpanStatusCode.ERROR });
-                        span.end();
-                        if (err) {
-                            req.log.error({
-                                message: 'Error trasmitting tweet to fanout service',
-                                email,
-                                uuid,
-                            });
-                            collectMetrics(
-                                'createTweet',
-                                MetricsCode.InternalServerError,
-                                MetricsMethod.Post,
-                                Date.now() - start
-                            );
-                            return res.status(500).json({
-                                error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR'),
-                            });
-                        }
+        opentelemetry.context.with(opentelemetry.trace.setSpan(opentelemetry.context.active(), span), () => {
+            span.setAttribute('tweetId', tweet.id.toString());
+            span.setAttribute('uuid', tweet.uuid);
+            // contact the fanout service using gRPC
+            tweetClient.createTweet(
+                {
+                    ...tweet,
+                    id: tweet.id.toString(),
+                    likesCount: tweet.likes_count.toString(),
+                    retweetsCount: tweet.retweets_count.toString(),
+                    createdAt: tweet.created_at.toString(),
+                },
+                (err) => {
+                    span.setStatus({ code: SpanStatusCode.ERROR });
+                    span.end();
+                    if (err) {
+                        Logger.error({
+                            message: 'Error trasmitting tweet to fanout service',
+                            email,
+                            uuid,
+                        });
+                        collectMetrics(
+                            'createTweet',
+                            MetricsCode.InternalServerError,
+                            MetricsMethod.Post,
+                            Date.now() - start
+                        );
+                        return res.status(500).json({
+                            error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR'),
+                        });
                     }
-                );
-            }
-        );
+                }
+            );
+        });
 
-        req.log.info({
+        Logger.info({
             message: 'Tweet created',
             uuid,
         });
@@ -105,17 +93,12 @@ export const createTweet = async (req: Request, res: Response) => {
         return res.status(201).json(tweet);
     } catch (error: Error | any) {
         console.log(error);
-        req.log.error({
+        Logger.error({
             message: 'Error creating tweet',
             error,
             uuid,
         });
-        collectMetrics(
-            'createTweet',
-            MetricsCode.InternalServerError,
-            MetricsMethod.Post,
-            Date.now() - start
-        );
+        collectMetrics('createTweet', MetricsCode.InternalServerError, MetricsMethod.Post, Date.now() - start);
         return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
     }
 };
@@ -132,17 +115,12 @@ export const deleteTweet = async (req: Request, res: Response) => {
     try {
         let [userExists, _] = await checkIfUserExists(email);
         if (!userExists) {
-            req.log.error({
+            Logger.error({
                 message: 'User not found',
                 email,
                 uuid,
             });
-            collectMetrics(
-                'deleteTweet',
-                MetricsCode.BadRequest,
-                MetricsMethod.Post,
-                Date.now() - start
-            );
+            collectMetrics('deleteTweet', MetricsCode.BadRequest, MetricsMethod.Post, Date.now() - start);
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
 
@@ -166,23 +144,18 @@ export const deleteTweet = async (req: Request, res: Response) => {
         });
         collectMetrics('deleteTweet', MetricsCode.Ok, MetricsMethod.Post, Date.now() - start);
         res.status(200).json({ tweet, deleted_tweet_likes, deleted_tweet_comments });
-        req.log.info({
+        Logger.info({
             message: 'Tweet deleted',
             email,
             uuid,
         });
     } catch (error: Error | any) {
-        req.log.error({
+        Logger.error({
             message: 'Error deleting tweet',
             email,
             uuid,
         });
-        collectMetrics(
-            'deleteTweet',
-            MetricsCode.InternalServerError,
-            MetricsMethod.Post,
-            Date.now() - start
-        );
+        collectMetrics('deleteTweet', MetricsCode.InternalServerError, MetricsMethod.Post, Date.now() - start);
         return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
     }
 };
@@ -198,44 +171,32 @@ export const likeTweet = async (req: Request, res: Response) => {
     let { tweetId } = req.params;
     try {
         // check if the user exists
-        let [userExists, user_id] = await checkIfUserExists(email);
+        let [userExists, user] = await checkIfUserExists(email);
         if (!userExists) {
-            req.log.error({
+            Logger.error({
                 message: 'User not found',
                 email,
                 uuid,
             });
-            collectMetrics(
-                'likeTweet',
-                MetricsCode.BadRequest,
-                MetricsMethod.Post,
-                Date.now() - start
-            );
+            collectMetrics('likeTweet', MetricsCode.BadRequest, MetricsMethod.Post, Date.now() - start);
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
         // check if the user has already liked the tweet
         let ifTweetLiked = await prisma.tweet_Likes.count({
             where: {
                 tweet_id: parseInt(tweetId, 10),
-                user_id: user_id!,
+                user_id: user?.id!,
             },
         });
         if (ifTweetLiked > 0) {
             // if yes, return an error
-            req.log.error({
+            Logger.error({
                 message: 'Tweet already liked',
                 email,
                 uuid,
             });
-            collectMetrics(
-                'likeTweet',
-                MetricsCode.BadRequest,
-                MetricsMethod.Post,
-                Date.now() - start
-            );
-            return res
-                .status(400)
-                .json({ error: nodeConfig.get('error_codes.TWEET_ALREADY_LIKED') });
+            collectMetrics('likeTweet', MetricsCode.BadRequest, MetricsMethod.Post, Date.now() - start);
+            return res.status(400).json({ error: nodeConfig.get('error_codes.TWEET_ALREADY_LIKED') });
         }
         // increment the tweet likes count
         let tweet = await prisma.tweet.update({
@@ -253,7 +214,7 @@ export const likeTweet = async (req: Request, res: Response) => {
             data: {
                 user: {
                     connect: {
-                        id: user_id!,
+                        id: user?.id!,
                     },
                 },
                 tweet: {
@@ -264,7 +225,7 @@ export const likeTweet = async (req: Request, res: Response) => {
             },
         });
 
-        req.log.info({
+        Logger.info({
             message: 'Tweet liked',
             email,
             uuid,
@@ -272,18 +233,13 @@ export const likeTweet = async (req: Request, res: Response) => {
         collectMetrics('likeTweet', MetricsCode.Ok, MetricsMethod.Post, Date.now() - start);
         res.status(200).json(tweet);
     } catch (error: Error | any) {
-        req.log.error({
+        Logger.error({
             message: 'Error liking tweet',
             email,
             uuid,
             error,
         });
-        collectMetrics(
-            'likeTweet',
-            MetricsCode.InternalServerError,
-            MetricsMethod.Post,
-            Date.now() - start
-        );
+        collectMetrics('likeTweet', MetricsCode.InternalServerError, MetricsMethod.Post, Date.now() - start);
         return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
     }
 };
@@ -298,19 +254,14 @@ export const unlikeTweet = async (req: Request, res: Response) => {
     let { email, uuid } = (req as any).token;
     let { tweetId } = req.params;
     try {
-        let [userExists, user_id] = await checkIfUserExists(email);
+        let [userExists, user] = await checkIfUserExists(email);
         if (!userExists) {
-            req.log.error({
+            Logger.error({
                 message: 'User not found',
                 email,
                 uuid,
             });
-            collectMetrics(
-                'unlikeTweet',
-                MetricsCode.BadRequest,
-                MetricsMethod.Post,
-                Date.now() - start
-            );
+            collectMetrics('unlikeTweet', MetricsCode.BadRequest, MetricsMethod.Post, Date.now() - start);
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
 
@@ -318,22 +269,17 @@ export const unlikeTweet = async (req: Request, res: Response) => {
         let ifTweetLiked = await prisma.tweet_Likes.count({
             where: {
                 tweet_id: parseInt(tweetId, 10),
-                user_id: user_id!,
+                user_id: user?.id!,
             },
         });
 
         if (ifTweetLiked === 0) {
-            req.log.error({
+            Logger.error({
                 message: 'Tweet not liked',
                 email,
                 uuid,
             });
-            collectMetrics(
-                'unlikeTweet',
-                MetricsCode.BadRequest,
-                MetricsMethod.Post,
-                Date.now() - start
-            );
+            collectMetrics('unlikeTweet', MetricsCode.BadRequest, MetricsMethod.Post, Date.now() - start);
             return res.status(400).json({ error: nodeConfig.get('error_codes.TWEET_NOT_LIKED') });
         }
 
@@ -353,25 +299,20 @@ export const unlikeTweet = async (req: Request, res: Response) => {
         let deleted_like = await prisma.tweet_Likes.deleteMany({
             where: {
                 tweet_id: parseInt(tweetId, 10),
-                user_id: user_id!,
+                user_id: user?.id!,
             },
         });
         collectMetrics('unlikeTweet', MetricsCode.Ok, MetricsMethod.Post, Date.now() - start);
         res.status(200).json({ tweet, deleted_like });
     } catch (error: Error | any) {
         console.log(error);
-        req.log.error({
+        Logger.error({
             message: 'Error unliking tweet',
             email,
             uuid,
             error,
         });
-        collectMetrics(
-            'unlikeTweet',
-            MetricsCode.InternalServerError,
-            MetricsMethod.Post,
-            Date.now() - start
-        );
+        collectMetrics('unlikeTweet', MetricsCode.InternalServerError, MetricsMethod.Post, Date.now() - start);
         return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
     }
 };
@@ -387,19 +328,14 @@ export const retweetTweet = async (req: Request, res: Response) => {
     let { tweetId } = req.params;
     try {
         // check if the user exists
-        let [userExists, user_id] = await checkIfUserExists(email);
+        let [userExists, user] = await checkIfUserExists(email);
         if (!userExists) {
-            req.log.error({
+            Logger.error({
                 message: 'User not found',
                 email,
                 uuid,
             });
-            collectMetrics(
-                'retweetTweet',
-                MetricsCode.BadRequest,
-                MetricsMethod.Post,
-                Date.now() - start
-            );
+            collectMetrics('retweetTweet', MetricsCode.BadRequest, MetricsMethod.Post, Date.now() - start);
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
 
@@ -411,58 +347,41 @@ export const retweetTweet = async (req: Request, res: Response) => {
         });
         // check if the tweet exists
         if (!orignalTweet) {
-            req.log.error({
+            Logger.error({
                 message: 'Tweet not found',
                 email,
                 uuid,
             });
-            collectMetrics(
-                'retweetTweet',
-                MetricsCode.BadRequest,
-                MetricsMethod.Post,
-                Date.now() - start
-            );
+            collectMetrics('retweetTweet', MetricsCode.BadRequest, MetricsMethod.Post, Date.now() - start);
             return res.status(400).json({ error: nodeConfig.get('error_codes.TWEET_NOT_FOUND') });
         }
 
-        if (orignalTweet.user_id === user_id) {
-            req.log.error({
+        if (orignalTweet.user_id === user?.id!) {
+            Logger.error({
                 message: 'User cannot retweet his own tweet',
                 email,
                 uuid,
             });
-            collectMetrics(
-                'retweetTweet',
-                MetricsCode.BadRequest,
-                MetricsMethod.Post,
-                Date.now() - start
-            );
+            collectMetrics('retweetTweet', MetricsCode.BadRequest, MetricsMethod.Post, Date.now() - start);
             return res.status(400).json({ error: nodeConfig.get('error_codes.TWEET_OWNER') });
         }
 
         // check if the user has already retweeted the tweet
         let ifTweetRetweeted = await prisma.tweet.count({
             where: {
-                user_id: user_id!,
+                user_id: user?.id!,
                 content: orignalTweet.content,
             },
         });
 
         if (ifTweetRetweeted > 0) {
-            req.log.error({
+            Logger.error({
                 message: 'Tweet already retweeted',
                 email,
                 uuid,
             });
-            collectMetrics(
-                'retweetTweet',
-                MetricsCode.BadRequest,
-                MetricsMethod.Post,
-                Date.now() - start
-            );
-            return res
-                .status(400)
-                .json({ error: nodeConfig.get('error_codes.TWEET_ALREADY_RETWEETED') });
+            collectMetrics('retweetTweet', MetricsCode.BadRequest, MetricsMethod.Post, Date.now() - start);
+            return res.status(400).json({ error: nodeConfig.get('error_codes.TWEET_ALREADY_RETWEETED') });
         }
         // increase the retweet count of the original tweet
         let existingTweet = await prisma.tweet.update({
@@ -482,7 +401,7 @@ export const retweetTweet = async (req: Request, res: Response) => {
                 content: existingTweet.content,
                 user: {
                     connect: {
-                        id: user_id!,
+                        id: user?.id!,
                     },
                 },
             },
@@ -499,7 +418,7 @@ export const retweetTweet = async (req: Request, res: Response) => {
             },
             (err) => {
                 if (err) {
-                    req.log.error({
+                    Logger.error({
                         message: 'Error trasmitting tweet to fanout service',
                         email,
                         uuid,
@@ -510,14 +429,12 @@ export const retweetTweet = async (req: Request, res: Response) => {
                         MetricsMethod.Post,
                         Date.now() - start
                     );
-                    return res
-                        .status(500)
-                        .json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
+                    return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
                 }
             }
         );
 
-        req.log.info({
+        Logger.info({
             message: 'Tweet retweeted',
             email,
             uuid,
@@ -525,17 +442,12 @@ export const retweetTweet = async (req: Request, res: Response) => {
         collectMetrics('retweetTweet', MetricsCode.Ok, MetricsMethod.Post, Date.now() - start);
         res.status(200).json(existingTweet);
     } catch (error: Error | any) {
-        req.log.error({
+        Logger.error({
             message: 'Error retweeting tweet',
             email,
             uuid,
         });
-        collectMetrics(
-            'retweetTweet',
-            MetricsCode.InternalServerError,
-            MetricsMethod.Post,
-            Date.now() - start
-        );
+        collectMetrics('retweetTweet', MetricsCode.InternalServerError, MetricsMethod.Post, Date.now() - start);
         return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
     }
 };
@@ -552,19 +464,14 @@ export const commentTweet = async (req: Request, res: Response) => {
     let { content } = req.body;
 
     try {
-        let [userExists, user_id] = await checkIfUserExists(email);
+        let [userExists, user] = await checkIfUserExists(email);
         if (!userExists) {
-            req.log.error({
+            Logger.error({
                 message: 'User not found',
                 email,
                 uuid,
             });
-            collectMetrics(
-                'commentTweet',
-                MetricsCode.BadRequest,
-                MetricsMethod.Post,
-                Date.now() - start
-            );
+            collectMetrics('commentTweet', MetricsCode.BadRequest, MetricsMethod.Post, Date.now() - start);
             return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
         }
 
@@ -575,17 +482,12 @@ export const commentTweet = async (req: Request, res: Response) => {
             },
         });
         if (!ifTweetExists) {
-            req.log.error({
+            Logger.error({
                 message: 'Tweet not found',
                 email,
                 uuid,
             });
-            collectMetrics(
-                'commentTweet',
-                MetricsCode.BadRequest,
-                MetricsMethod.Post,
-                Date.now() - start
-            );
+            collectMetrics('commentTweet', MetricsCode.BadRequest, MetricsMethod.Post, Date.now() - start);
             return res.status(400).json({ error: nodeConfig.get('error_codes.TWEET_NOT_FOUND') });
         }
 
@@ -593,25 +495,18 @@ export const commentTweet = async (req: Request, res: Response) => {
         let ifUserCommented = await prisma.tweet_Comments.findFirst({
             where: {
                 tweet_id: parseInt(tweetId, 10),
-                user_id: user_id!,
+                user_id: user?.id!,
             },
         });
 
         if (ifUserCommented) {
-            req.log.error({
+            Logger.error({
                 message: 'User already commented on the tweet',
                 email,
                 uuid,
             });
-            collectMetrics(
-                'commentTweet',
-                MetricsCode.BadRequest,
-                MetricsMethod.Post,
-                Date.now() - start
-            );
-            return res
-                .status(400)
-                .json({ error: nodeConfig.get('error_codes.USER_ALREADY_COMMENTED') });
+            collectMetrics('commentTweet', MetricsCode.BadRequest, MetricsMethod.Post, Date.now() - start);
+            return res.status(400).json({ error: nodeConfig.get('error_codes.USER_ALREADY_COMMENTED') });
         }
 
         // create a new comment
@@ -620,7 +515,7 @@ export const commentTweet = async (req: Request, res: Response) => {
                 content,
                 user: {
                     connect: {
-                        id: user_id!,
+                        id: user?.id!,
                     },
                 },
                 tweet: {
@@ -636,17 +531,12 @@ export const commentTweet = async (req: Request, res: Response) => {
 
         // TODO: contact the fanout service using gRPC
     } catch (error: Error | any) {
-        req.log.error({
+        Logger.error({
             message: 'Error commenting tweet',
             email,
             uuid,
         });
-        collectMetrics(
-            'commentTweet',
-            MetricsCode.InternalServerError,
-            MetricsMethod.Post,
-            Date.now() - start
-        );
+        collectMetrics('commentTweet', MetricsCode.InternalServerError, MetricsMethod.Post, Date.now() - start);
         return res.status(500).json({ error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR') });
     }
 };

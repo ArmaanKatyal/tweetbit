@@ -98,10 +98,7 @@ export interface UserServiceClient extends grpc.Client {
 export interface UserServiceHandlers extends grpc.UntypedServiceImplementation {
     FollowUser: grpc.handleUnaryCall<_fanout_FollowUserRequest__Output, _fanout_FollowUserResponse>;
 
-    UnfollowUser: grpc.handleUnaryCall<
-        _fanout_FollowUserRequest__Output,
-        _fanout_FollowUserResponse
-    >;
+    UnfollowUser: grpc.handleUnaryCall<_fanout_FollowUserRequest__Output, _fanout_FollowUserResponse>;
 }
 
 export interface UserServiceDefinition extends grpc.ServiceDefinition {

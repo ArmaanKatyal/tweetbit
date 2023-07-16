@@ -39,11 +39,7 @@ export function initTracer() {
     provider.register();
 
     registerInstrumentations({
-        instrumentations: [
-            new GrpcInstrumentation(),
-            new HttpInstrumentation(),
-            new ExpressInstrumentation(),
-        ],
+        instrumentations: [new GrpcInstrumentation(), new HttpInstrumentation(), new ExpressInstrumentation()],
     });
 
     tracer = provider.getTracer('writeService');
