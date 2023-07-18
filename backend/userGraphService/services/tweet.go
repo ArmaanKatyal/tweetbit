@@ -19,7 +19,7 @@ type TweetController struct {
 	metrics *internal.PromMetrics
 }
 
-// Add the tweet to the timeline of all the followers of the user
+// HandleCreateTweet Add the tweet to the timeline of all the followers of the user
 func (tc *TweetController) HandleCreateTweet(ctx context.Context, message []byte) {
 	start := time.Now()
 	tc.metrics.IncKafkaTransaction("createTweet")
@@ -52,15 +52,12 @@ func (tc *TweetController) HandleCreateTweet(ctx context.Context, message []byte
 
 	// add the tweet to followers' timeline
 	for _, follower := range followers {
-		// TODO: fix this go routine logic. instead of starting a new go routine for each follower, use a channel
-		go func(follower string, ctx context.Context) {
-			err = tweetClient.LPush(ctx, follower, message).Err()
-			if err != nil {
-				tc.metrics.CreateTweetResponseTime.WithLabelValues(internal.Error).Observe(time.Since(start).Seconds())
-				span.SetStatus(codes.Error, err.Error())
-				log.Printf("Error: %v\n", err)
-			}
-		}(follower, ctx)
+		err = tweetClient.LPush(ctx, follower, message).Err()
+		if err != nil {
+			tc.metrics.CreateTweetResponseTime.WithLabelValues(internal.Error).Observe(time.Since(start).Seconds())
+			span.SetStatus(codes.Error, err.Error())
+			log.Printf("Error: %v\n", err)
+		}
 	}
 	tc.metrics.CreateTweetResponseTime.WithLabelValues(internal.Success).Observe(time.Since(start).Seconds())
 }
