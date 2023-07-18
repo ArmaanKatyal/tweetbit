@@ -20,7 +20,7 @@ type UserController struct {
 	metrics *internal.PromMetrics
 }
 
-// Add the follower to the user's follower list
+// HandleFollowUser Add the follower to the user's follower list
 func (uc *UserController) HandleFollowUser(ctx context.Context, message []byte) {
 	start := time.Now()
 	uc.metrics.IncKafkaTransaction("followUser")
@@ -55,7 +55,7 @@ func (uc *UserController) HandleFollowUser(ctx context.Context, message []byte) 
 	uc.metrics.FollowUserResponseTime.WithLabelValues(internal.Success).Observe(time.Since(start).Seconds())
 }
 
-// Unfollow a user and remove the user from the follower list of the user
+// HandleUnfollowUser Unfollow a user and remove the user from the follower list of the user
 func (uc *UserController) HandleUnfollowUser(ctx context.Context, message []byte) {
 	start := time.Now()
 	uc.metrics.IncKafkaTransaction("unfollowUser")
@@ -89,7 +89,7 @@ func (uc *UserController) HandleUnfollowUser(ctx context.Context, message []byte
 	uc.metrics.UnfollowUserResponseTime.WithLabelValues(internal.Success).Observe(time.Since(start).Seconds())
 }
 
-// Get all the followers of a user from redis
+// GetAllUserFollowers Get all the followers of a user from redis
 func GetAllUserFollowers(ctx context.Context, userId string, rdb *redis.Client) ([]string, error) {
 	ctx, span := trace.SpanFromContext(ctx).TracerProvider().Tracer("userGraphService.services").Start(ctx, "GetAllUserFollowers")
 	defer span.End()
