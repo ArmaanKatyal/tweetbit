@@ -83,4 +83,5 @@ followUser {
 - Before returning the results, searchService does the following:
     - Merge and ranks the results from the ElasticSearch database with the timeline data stored in the memory cache
 
-## Scale the design
+# Author
+[@ArmaanKatyal](https://github.com/ArmaanKatyal)
