@@ -11,6 +11,7 @@ import (
 )
 
 type Claims struct {
+	Id         string `json:"id"`
 	Email      string `json:"email"`
 	Token_type string `json:"type"`
 	jwt.RegisteredClaims

@@ -7,16 +7,12 @@ import (
 	"github.com/ArmaanKatyal/tweetbit/backend/readService/internal"
 	"github.com/ArmaanKatyal/tweetbit/backend/readService/middlewares"
 	"github.com/gin-gonic/gin"
-	"go.opentelemetry.io/otel"
 )
 
 func NewRouter(ctx context.Context, pm *internal.PromMetrics) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
-
-	_, span := otel.Tracer("searchService.services").Start(ctx, "requestRouter")
-	defer span.End()
 
 	health := &controllers.HealthController{}
 	health.Metrics = pm
@@ -25,14 +21,19 @@ func NewRouter(ctx context.Context, pm *internal.PromMetrics) *gin.Engine {
 	router.GET("/metrics", internal.PrometheusHandler())
 	router.Use(middlewares.VerifyToken(pm))
 
-	// v1 := router.Group("/api/v1")
+	v1 := router.Group("/api/v1")
 	{
-		// searchGroup := v1.Group("/search")
+		homeTimelineGroup := v1.Group("/home_timeline")
 		{
-			// span.SetAttributes(attribute.Key("group").String("search"))
-			// search := new(controllers.SearchController)
-			// search.Metrics = pm
-			// searchGroup.GET("/tweet", search.TweetSearch(newCtx))
+			htc := controllers.HomeTimelineController{}
+			htc.Metrics = pm
+			homeTimelineGroup.GET("", htc.GetHomeTimeline(ctx))
+		}
+		userTimelineGroup := v1.Group("/user_timeline")
+		{
+			htc := controllers.UserTimelineController{}
+			htc.Metrics = pm
+			userTimelineGroup.GET("", htc.GetUserTimeline(ctx))
 		}
 	}
 	return router
