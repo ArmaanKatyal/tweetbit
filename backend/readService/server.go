@@ -9,7 +9,9 @@ import (
 	"github.com/ArmaanKatyal/tweetbit/backend/readService/internal"
 	"github.com/ArmaanKatyal/tweetbit/backend/readService/services"
 	"github.com/ArmaanKatyal/tweetbit/backend/readService/utils"
+	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
@@ -24,6 +26,14 @@ func init() {
 }
 
 func main() {
+
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+
+	if envFlag == "prod" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	utils.LoadConfig(envFlag)
 	pm := internal.InitPromMetrics("readservice", prometheus.LinearBuckets(0, 5, 20))
 	tp := internal.InitTracer()

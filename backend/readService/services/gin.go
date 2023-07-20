@@ -41,10 +41,12 @@ func NewRouter(ctx context.Context, pm *internal.PromMetrics) *gin.Engine {
 			htc := controllers.UserTimelineController{Metrics: pm}
 			userTimelineGroup.GET("", htc.GetUserTimeline(ctx))
 		}
-		user := v1.Group("/user")
+		userGroup := v1.Group("/user")
 		{
-			uc := controllers.UserController{Metrics: pm, Dataservice: ds}
-			user.GET("", uc.GetUser(ctx))
+			uc := controllers.UserController{Metrics: pm, DB: ds.GetDatabase()}
+			userGroup.GET("", uc.GetUser(ctx))
+			userGroup.GET("/likes", uc.GetUserLikes(ctx))
+			userGroup.GET("/replies", uc.GetUserReplies(ctx))
 		}
 	}
 	return router

@@ -32,3 +32,7 @@ func connect(config *DatabaseConfig) *gorm.DB {
 	}
 	return db
 }
+
+func (ds *DatabaseService) GetDatabase() *gorm.DB {
+	return ds.Db
+}
