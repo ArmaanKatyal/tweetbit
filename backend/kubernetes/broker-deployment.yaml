@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   annotations:
     kompose.cmd: kompose convert -o ./kubernetes
-    kompose.version: 1.28.0 (HEAD)
+    kompose.version: 1.29.0 (HEAD)
   creationTimestamp: null
   labels:
     io.kompose.service: broker
@@ -18,7 +18,7 @@ spec:
     metadata:
       annotations:
         kompose.cmd: kompose convert -o ./kubernetes
-        kompose.version: 1.28.0 (HEAD)
+        kompose.version: 1.29.0 (HEAD)
       creationTimestamp: null
       labels:
         io.kompose.network/backend-default: "true"
@@ -55,9 +55,17 @@ spec:
           name: kafka
           ports:
             - containerPort: 29092
+              hostPort: 29092
+              protocol: TCP
             - containerPort: 9093
+              hostPort: 9093
+              protocol: TCP
             - containerPort: 9101
+              hostPort: 9101
+              protocol: TCP
             - containerPort: 9092
+              hostPort: 9092
+              protocol: TCP
           resources: {}
       hostname: kafka
       restartPolicy: Always

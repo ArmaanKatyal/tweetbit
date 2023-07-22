@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   annotations:
     kompose.cmd: kompose convert -o ./kubernetes
-    kompose.version: 1.28.0 (HEAD)
+    kompose.version: 1.29.0 (HEAD)
   creationTimestamp: null
   labels:
     io.kompose.service: fanoutservice
@@ -18,17 +18,19 @@ spec:
     metadata:
       annotations:
         kompose.cmd: kompose convert -o ./kubernetes
-        kompose.version: 1.28.0 (HEAD)
+        kompose.version: 1.29.0 (HEAD)
       creationTimestamp: null
       labels:
         io.kompose.network/backend-default: "true"
         io.kompose.service: fanoutservice
     spec:
       containers:
-        - image: armaan24katyal/fanoutservice
+        - image: fanoutservice
           name: fanoutservice
           ports:
             - containerPort: 3002
+              hostPort: 3002
+              protocol: TCP
           resources: {}
       hostname: fanoutservice
       restartPolicy: Always

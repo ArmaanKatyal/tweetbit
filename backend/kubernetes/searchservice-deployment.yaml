@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   annotations:
     kompose.cmd: kompose convert -o ./kubernetes
-    kompose.version: 1.28.0 (HEAD)
+    kompose.version: 1.29.0 (HEAD)
   creationTimestamp: null
   labels:
     io.kompose.service: searchservice
@@ -18,14 +18,14 @@ spec:
     metadata:
       annotations:
         kompose.cmd: kompose convert -o ./kubernetes
-        kompose.version: 1.28.0 (HEAD)
+        kompose.version: 1.29.0 (HEAD)
       creationTimestamp: null
       labels:
         io.kompose.network/backend-default: "true"
         io.kompose.service: searchservice
     spec:
       containers:
-        - image: armaan24katyal/searchservice
+        - image: searchservice
           livenessProbe:
             exec:
               command:
@@ -35,6 +35,8 @@ spec:
           name: searchservice
           ports:
             - containerPort: 5000
+              hostPort: 5000
+              protocol: TCP
           resources: {}
       hostname: searchservice
       restartPolicy: Always

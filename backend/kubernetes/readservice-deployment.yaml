@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -o ./kubernetes
+    kompose.version: 1.29.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: readservice
+  name: readservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: readservice
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -o ./kubernetes
+        kompose.version: 1.29.0 (HEAD)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/backend-default: "true"
+        io.kompose.service: readservice
+    spec:
+      containers:
+        - image: readservice
+          livenessProbe:
+            exec:
+              command:
+                - curl
+                - -f
+                - http://localhost:5005/health
+          name: readservice
+          ports:
+            - containerPort: 5005
+              hostPort: 5005
+              protocol: TCP
+          resources: {}
+      hostname: readservice
+      restartPolicy: Always
+status: {}

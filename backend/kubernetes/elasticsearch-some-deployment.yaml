@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   annotations:
     kompose.cmd: kompose convert -o ./kubernetes
-    kompose.version: 1.28.0 (HEAD)
+    kompose.version: 1.29.0 (HEAD)
   creationTimestamp: null
   labels:
     io.kompose.service: elasticsearch-some
@@ -18,7 +18,7 @@ spec:
     metadata:
       annotations:
         kompose.cmd: kompose convert -o ./kubernetes
-        kompose.version: 1.28.0 (HEAD)
+        kompose.version: 1.29.0 (HEAD)
       creationTimestamp: null
       labels:
         io.kompose.network/backend-default: "true"
@@ -40,6 +40,8 @@ spec:
           name: elasticsearch1
           ports:
             - containerPort: 9200
+              hostPort: 9200
+              protocol: TCP
           resources: {}
       hostname: elasticsearch
       restartPolicy: Always

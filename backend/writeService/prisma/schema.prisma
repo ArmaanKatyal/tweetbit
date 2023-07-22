@@ -54,8 +54,8 @@ model Tweet_Likes {
 
 model Tweet_Comments {
   id         Int   @id @default(autoincrement())
-  tweet_id   Int @unique
-  user_id    Int @unique
+  tweet_id   Int
+  user_id    Int
   content    String
   created_at DateTime @default(now())
   user       User     @relation(fields: [user_id], references: [id])

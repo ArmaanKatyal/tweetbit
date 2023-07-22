@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   annotations:
     kompose.cmd: kompose convert -o ./kubernetes
-    kompose.version: 1.28.0 (HEAD)
+    kompose.version: 1.29.0 (HEAD)
   creationTimestamp: null
   labels:
     io.kompose.service: usergraphservice
@@ -18,14 +18,14 @@ spec:
     metadata:
       annotations:
         kompose.cmd: kompose convert -o ./kubernetes
-        kompose.version: 1.28.0 (HEAD)
+        kompose.version: 1.29.0 (HEAD)
       creationTimestamp: null
       labels:
         io.kompose.network/backend-default: "true"
         io.kompose.service: usergraphservice
     spec:
       containers:
-        - image: armaan24katyal/usergraphservice
+        - image: usergraphservice
           livenessProbe:
             exec:
               command:
@@ -35,6 +35,8 @@ spec:
           name: usergraphservice
           ports:
             - containerPort: 5003
+              hostPort: 5003
+              protocol: TCP
           resources: {}
       hostname: usergraphservice
       restartPolicy: Always

@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   annotations:
     kompose.cmd: kompose convert -o ./kubernetes
-    kompose.version: 1.28.0 (HEAD)
+    kompose.version: 1.29.0 (HEAD)
   creationTimestamp: null
   labels:
     io.kompose.service: authservice
@@ -18,14 +18,14 @@ spec:
     metadata:
       annotations:
         kompose.cmd: kompose convert -o ./kubernetes
-        kompose.version: 1.28.0 (HEAD)
+        kompose.version: 1.29.0 (HEAD)
       creationTimestamp: null
       labels:
         io.kompose.network/backend-default: "true"
         io.kompose.service: authservice
     spec:
       containers:
-        - image: armaan24katyal/authservice
+        - image: authservice
           livenessProbe:
             exec:
               command:
@@ -35,6 +35,8 @@ spec:
           name: authservice
           ports:
             - containerPort: 5001
+              hostPort: 5001
+              protocol: TCP
           resources: {}
       hostname: authservice
       restartPolicy: Always

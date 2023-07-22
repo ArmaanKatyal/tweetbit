@@ -1,23 +1,25 @@
 global:
-  scrape_interval:     15s
+  scrape_interval: 15s
   evaluation_interval: 15s
-
 scrape_configs:
   - job_name: prometheus
     static_configs:
-      - targets: ['localhost:9090']
+      - targets: ["localhost:9090"]
   - job_name: fanoutservice
     static_configs:
-      - targets: ['fanoutservice:5004']
+      - targets: ["fanoutservice:5004"]
   - job_name: searchservice
     static_configs:
-      - targets: ['searchservice:5000']
+      - targets: ["searchservice:5000"]
   - job_name: usergraphservice
     static_configs:
-      - targets: ['usergraphservice:5000']
+      - targets: ["usergraphservice:5000"]
   - job_name: authservice
     static_configs:
-      - targets: ['authservice:5001']
+      - targets: ["authservice:5001"]
   - job_name: writeservice
     static_configs:
-      - targets: ['writeservice:5002']
+      - targets: ["writeservice:5002"]
+  - job_name: readservice
+    static_configs:
+      - targets: ["readservice:5005"]

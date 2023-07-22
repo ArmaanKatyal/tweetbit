@@ -531,6 +531,7 @@ export const commentTweet = async (req: Request, res: Response) => {
 
         // TODO: contact the fanout service using gRPC
     } catch (error: Error | any) {
+        console.log(error);
         Logger.error({
             message: 'Error commenting tweet',
             email,

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -o ./kubernetes
+    kompose.version: 1.29.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: readservice
+  name: readservice
+spec:
+  ports:
+    - name: "5005"
+      port: 5005
+      targetPort: 5005
+  selector:
+    io.kompose.service: readservice
+status:
+  loadBalancer: {}
