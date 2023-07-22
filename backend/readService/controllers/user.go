@@ -70,7 +70,7 @@ func (uc *UserController) GetUserLikes(ctx context.Context) gin.HandlerFunc {
 
 		// Get user liked tweets from database
 		var tweets []models.Tweet
-		uc.DB.Table("Tweet").Joins("JOIN \"Tweet_Likes\" ON \"Tweet\".id = \"Tweet_Likes\".tweet_id").Where("\"Tweet_Likes\".user_id = ?", user.Id).Unscoped().Find(&tweets)
+		uc.DB.Table("Tweet").Joins(`JOIN "Tweet_Likes" ON "Tweet".id = "Tweet_Likes".tweet_id`).Where(`"Tweet_Likes".user_id = ?`, user.Id).Unscoped().Find(&tweets)
 
 		log.Info().Str("module", "controller.user").Str("function", "GetUserLikes").Msg("user likes retrieved successfully")
 		c.JSON(200, gin.H{
@@ -99,14 +99,30 @@ func (uc *UserController) GetUserReplies(ctx context.Context) gin.HandlerFunc {
 		var user models.User
 		uc.DB.Where("email = ?", userClaims.(*middlewares.Claims).Email).Table("User").Unscoped().First(&user)
 
-		// TODO: morph respective tweets with comments and returnn
-
 		var comments []models.Tweet_Comments
-		uc.DB.Raw(`select t.*, tc.* from "Tweet_Comments" tc join "Tweet" t on t.id = tc.tweet_id where t.user_id=1;`).Find(&comments)
+		uc.DB.Raw(`select tc.* from "Tweet_Comments" tc join "Tweet" t on t.id = tc.tweet_id where t.user_id=1;`).Find(&comments)
+
+		var tweets []models.Tweet
+		uc.DB.Raw(`select t.* from "Tweet_Comments" tc join "Tweet" t on t.id = tc.tweet_id where t.user_id=1;`).Find(&tweets)
+
+		type reply struct {
+			Tweet   models.Tweet
+			Comment models.Tweet_Comments
+		}
+
+		var replies []reply
+
+		// Merge tweets and comments
+		for i := 0; i < len(tweets); i++ {
+			replies = append(replies, reply{
+				Tweet:   tweets[i],
+				Comment: comments[i],
+			})
+		}
 
 		log.Info().Str("module", "controller.user").Str("function", "GetUserReplies").Msg("user replies retrieved successfully")
 		c.JSON(200, gin.H{
-			"replies": comments,
+			"replies": replies,
 		})
 		uc.Metrics.ObserveResponseTime(internal.Ok, internal.GET, time.Since(start).Seconds())
 		uc.Metrics.IncHttpTransaction(internal.Ok, internal.GET)
