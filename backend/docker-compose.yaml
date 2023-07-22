@@ -1,7 +1,7 @@
-version: '3.4'
+version: "3.4"
 services:
   postgres:
-    image: 'postgres:15.3'
+    image: "postgres:15.3"
     container_name: postgres
     hostname: db
     restart: always
@@ -9,18 +9,17 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     ports:
-      - '5432:5432'
+      - "5432:5432"
     healthcheck:
-      test: [ "CMD", "pg_isready", "-U", "postgres" ]
+      test: ["CMD", "pg_isready", "-U", "postgres"]
     volumes:
-      - 'postgres:/var/lib/postgresql/data'
-
+      - "postgres:/var/lib/postgresql/data"
   nginx:
     image: nginx:1.24
     container_name: nginx
     hostname: nginx
     ports:
-      - '80:80'
+      - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
     environment:
@@ -33,60 +32,44 @@ services:
       - authservice
       - writeservice
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:80/health" ]
-
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
   zookeeper:
-    image: 'confluentinc/cp-zookeeper:7.3.0'
+    image: "confluentinc/cp-zookeeper:7.3.0"
     hostname: zookeeper
     container_name: zookeeper1
     ports:
-      - '2181:2181'
+      - "2181:2181"
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     healthcheck:
-      test:
-        [
-          "CMD",
-          "zookeeper-shell",
-          "localhost:2181",
-          "ls",
-          "/"
-        ]
-
+      test: ["CMD", "zookeeper-shell", "localhost:2181", "ls", "/"]
   broker:
-    image: 'confluentinc/cp-kafka:7.3.0'
+    image: "confluentinc/cp-kafka:7.3.0"
     hostname: kafka
     container_name: kafka
     depends_on:
       - zookeeper
     ports:
-      - '29092:29092'
-      - '9093:9093'
-      - '9101:9101'
+      - "29092:29092"
+      - "9093:9093"
+      - "9101:9101"
     expose:
-      - '9092'
+      - "9092"
     restart: always
     environment:
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT'
-      KAFKA_ADVERTISED_LISTENERS: 'INSIDE://kafka:9092,OUTSIDE://localhost:9093'
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT"
+      KAFKA_ADVERTISED_LISTENERS: "INSIDE://kafka:9092,OUTSIDE://localhost:9093"
       KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
-      KAFKA_LISTENERS: 'INSIDE://0.0.0.0:9092,OUTSIDE://0.0.0.0:9093'
+      KAFKA_LISTENERS: "INSIDE://0.0.0.0:9092,OUTSIDE://0.0.0.0:9093"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
     healthcheck:
       test:
-        [
-          "CMD",
-          "kafka-topics",
-          "--bootstrap-server",
-          "broker:9092",
-          "--list"
-        ]
-
+        ["CMD", "kafka-topics", "--bootstrap-server", "broker:9092", "--list"]
   mongodb:
     image: mongo:6.0.3
     container_name: mongo1
@@ -101,7 +84,7 @@ services:
       MONGO_VERSION: 6.0.3
       HOME: /data/db
     ports:
-      - '27017:27017'
+      - "27017:27017"
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongo localhost:27017/test --quiet
       interval: 10s
@@ -109,21 +92,19 @@ services:
       retries: 5
       start_period: 40s
     volumes:
-      - 'mongodb:/data/db'
+      - "mongodb:/data/db"
       - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
-
   redis:
     image: redis:7.0.7-alpine
     container_name: redis1
     hostname: redis
     ports:
-      - '6379:6379'
+      - "6379:6379"
     restart: always
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "ping"]
     volumes:
-      - 'redis:/data'
-
+      - "redis:/data"
   elasticsearch_some:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.17.10
     container_name: elasticsearch1
@@ -132,11 +113,10 @@ services:
       - discovery.type=single-node
       - ELASTIC_CONTAINER=true
     ports:
-      - '9200:9200'
+      - "9200:9200"
     restart: always
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9200" ]
-
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
   jaeger:
     image: jaegertracing/all-in-one:1.46
     container_name: jaeger1
@@ -144,47 +124,44 @@ services:
     environment:
       - COLLECTOR_OTLP_ENABLED=true
     ports:
-      - '5775:5775/udp'
-      - '6831:6831/udp'
-      - '6832:6832/udp'
-      - '5778:5778'
-      - '16686:16686'
-      - '14268:14268'
-      - '9411:9411'
-      - '4318:4318'
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+      - "16686:16686"
+      - "14268:14268"
+      - "9411:9411"
+      - "4318:4318"
     restart: always
     volumes:
-      - 'jaeger:/tmp'
-
+      - "jaeger:/tmp"
   grafana:
     image: grafana/grafana-enterprise:9.5.3
     container_name: grafana1
     restart: unless-stopped
     hostname: grafana
     ports:
-      - '3000:3000'
+      - "3000:3000"
     environment:
       - GF_SERVER_ROOT_URL=http://my.grafana.server/
     volumes:
       - grafana_data:/var/lib/grafana
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:3000" ]
-
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
   prometheus:
     image: prom/prometheus:v2.44.0
     container_name: prometheus1
     restart: unless-stopped
     hostname: prometheus
     ports:
-      - '9090:9090'
+      - "9090:9090"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
   usergraphservice:
     build:
       context: userGraphService
@@ -192,7 +169,7 @@ services:
     container_name: usergraphservice
     hostname: usergraphservice
     ports:
-      - '5003:5003'
+      - "5003:5003"
     depends_on:
       broker:
         condition: service_healthy
@@ -203,8 +180,7 @@ services:
       jaeger:
         condition: service_started
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
-
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
   searchservice:
     build:
       context: searchService
@@ -212,7 +188,7 @@ services:
     container_name: searchservice
     hostname: searchservice
     ports:
-      - '5000:5000'
+      - "5000:5000"
     depends_on:
       broker:
         condition: service_healthy
@@ -223,8 +199,7 @@ services:
       jaeger:
         condition: service_started
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
-
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
   fanoutservice:
     build:
       context: fanoutService
@@ -232,7 +207,7 @@ services:
     container_name: fanoutservice
     hostname: fanoutservice
     ports:
-      - '3002:3002'
+      - "3002:3002"
     depends_on:
       broker:
         condition: service_healthy
@@ -240,7 +215,6 @@ services:
         condition: service_healthy
       jaeger:
         condition: service_started
-
   authservice:
     build:
       context: authservice
@@ -248,15 +222,14 @@ services:
     container_name: authservice
     hostname: authservice
     ports:
-      - '5001:5001'
+      - "5001:5001"
     depends_on:
       postgres:
         condition: service_healthy
       mongodb:
         condition: service_started
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
-
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
   writeservice:
     build:
       context: writeService
@@ -264,15 +237,27 @@ services:
     container_name: writeservice
     hostname: writeservice
     ports:
-      - '5002:5002'
+      - "5002:5002"
     depends_on:
       mongodb:
         condition: service_started
       postgres:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:5002/health" ]
-
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+  readservice:
+    build:
+      context: readService
+      dockerfile: ./Dockerfile
+    container_name: readservice
+    hostname: readservice
+    ports:
+      - "5005:5005"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5005/health"]
 volumes:
   postgres:
     driver: local

@@ -15,6 +15,12 @@ type PromMetrics struct {
 	buckets                          []float64
 }
 
+type MetricsInput struct {
+	Code   string
+	Method string
+	Route  string
+}
+
 const (
 	Ok                  = "200"
 	BadRequest          = "400"
