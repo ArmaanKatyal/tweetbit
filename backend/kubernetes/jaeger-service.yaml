@@ -3,7 +3,7 @@ kind: Service
 metadata:
   annotations:
     kompose.cmd: kompose convert -o ./kubernetes
-    kompose.version: 1.28.0 (HEAD)
+    kompose.version: 1.29.0 (HEAD)
   creationTimestamp: null
   labels:
     io.kompose.service: jaeger
@@ -34,6 +34,9 @@ spec:
     - name: "9411"
       port: 9411
       targetPort: 9411
+    - name: "4318"
+      port: 4318
+      targetPort: 4318
   selector:
     io.kompose.service: jaeger
 status:

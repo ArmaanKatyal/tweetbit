@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   annotations:
     kompose.cmd: kompose convert -o ./kubernetes
-    kompose.version: 1.28.0 (HEAD)
+    kompose.version: 1.29.0 (HEAD)
   creationTimestamp: null
   labels:
     io.kompose.service: mongodb
@@ -19,7 +19,7 @@ spec:
     metadata:
       annotations:
         kompose.cmd: kompose convert -o ./kubernetes
-        kompose.version: 1.28.0 (HEAD)
+        kompose.version: 1.29.0 (HEAD)
       creationTimestamp: null
       labels:
         io.kompose.network/backend-default: "true"
@@ -55,6 +55,8 @@ spec:
           name: mongo1
           ports:
             - containerPort: 27017
+              hostPort: 27017
+              protocol: TCP
           resources: {}
           volumeMounts:
             - mountPath: /data/db

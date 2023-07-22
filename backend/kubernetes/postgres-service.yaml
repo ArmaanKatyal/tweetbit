@@ -6,14 +6,14 @@ metadata:
     kompose.version: 1.29.0 (HEAD)
   creationTimestamp: null
   labels:
-    io.kompose.service: authservice
-  name: authservice
+    io.kompose.service: postgres
+  name: postgres
 spec:
   ports:
-    - name: "5001"
-      port: 5001
-      targetPort: 5001
+    - name: "5432"
+      port: 5432
+      targetPort: 5432
   selector:
-    io.kompose.service: authservice
+    io.kompose.service: postgres
 status:
   loadBalancer: {}
