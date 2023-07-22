@@ -38,8 +38,8 @@ func NewRouter(ctx context.Context, pm *internal.PromMetrics) *gin.Engine {
 		}
 		userTimelineGroup := v1.Group("/user_timeline")
 		{
-			htc := controllers.UserTimelineController{Metrics: pm}
-			userTimelineGroup.GET("", htc.GetUserTimeline(ctx))
+			utc := controllers.UserTimelineController{Metrics: pm}
+			userTimelineGroup.GET("", utc.GetUserTimeline(ctx))
 		}
 		userGroup := v1.Group("/user")
 		{
@@ -49,6 +49,11 @@ func NewRouter(ctx context.Context, pm *internal.PromMetrics) *gin.Engine {
 			userGroup.GET("/replies", uc.GetUserReplies(ctx))
 			userGroup.GET("/followers", uc.GetUserFollowers(ctx))
 			userGroup.GET("/following", uc.GetUserFollowing(ctx))
+		}
+		tweetGroup := v1.Group("/tweet")
+		{
+			tc := controllers.TweetController{Metrics: pm, DB: ds.GetDatabase()}
+			tweetGroup.GET("", tc.GetTweet(ctx))
 		}
 	}
 	return router

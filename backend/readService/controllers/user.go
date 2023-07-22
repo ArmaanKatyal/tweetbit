@@ -180,7 +180,7 @@ func (uc *UserController) GetUserReplies(ctx context.Context) gin.HandlerFunc {
 		}
 
 		var comments []models.Tweet_Comments
-		err = uc.DB.Raw(`select tc.* from "Tweet_Comments" tc join "Tweet" t on t.id = tc.tweet_id where t.user_id=1;`).Find(&comments).Error
+		err = uc.DB.Raw(`select tc.* from "Tweet_Comments" tc join "Tweet" t on t.id = tc.tweet_id where t.user_id= ?;`, user.Id).Find(&comments).Error
 		if err != nil {
 			log.Error().Err(err).Msg("error retrieving user comments from database")
 			c.AbortWithStatusJSON(500, gin.H{
@@ -196,7 +196,7 @@ func (uc *UserController) GetUserReplies(ctx context.Context) gin.HandlerFunc {
 		}
 
 		var tweets []models.Tweet
-		err = uc.DB.Raw(`select t.* from "Tweet_Comments" tc join "Tweet" t on t.id = tc.tweet_id where t.user_id=1;`).Find(&tweets).Error
+		err = uc.DB.Raw(`select t.* from "Tweet_Comments" tc join "Tweet" t on t.id = tc.tweet_id where t.user_id= ?;`, user.Id).Find(&tweets).Error
 		if err != nil {
 			log.Error().Err(err).Msg("error retrieving user tweets from database")
 			c.AbortWithStatusJSON(500, gin.H{

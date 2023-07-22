@@ -96,20 +96,34 @@ const login = async (req: Request, res: Response) => {
         sameSite: 'none',
     });
 
-    let checkUser = await prisma.user.findUnique({
-        where: {
-            email: checkAuth.email,
-        },
-    });
-    if (!checkUser) {
+    let checkUser;
+    try {
+        checkUser = await prisma.user.findUnique({
+            where: {
+                email: checkAuth.email,
+            },
+        });
+        if (!checkUser) {
+            req.log.info({
+                message: 'User not found',
+                userEmail: req.body.email,
+                service: 'auth',
+                function: 'login',
+            });
+            collectMetrics(MetricsCode.BadRequest, MetricsMethod.Post, start);
+            return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
+        }
+    } catch (err) {
         req.log.info({
-            message: 'User not found',
+            message: 'Error while fetching user from user database',
             userEmail: req.body.email,
             service: 'auth',
             function: 'login',
         });
-        collectMetrics(MetricsCode.BadRequest, MetricsMethod.Post, start);
-        return res.status(400).json({ error: nodeConfig.get('error_codes.USER_NOT_FOUND') });
+        collectMetrics(MetricsCode.InternalServerError, MetricsMethod.Post, start);
+        return res.status(500).json({
+            error: nodeConfig.get('error_codes.INTERNAL_SERVER_ERROR'),
+        });
     }
 
     // Remove the uuid and _id from the payload
