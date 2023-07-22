@@ -239,7 +239,131 @@ func (uc *UserController) GetUserReplies(ctx context.Context) gin.HandlerFunc {
 	}
 }
 
+func (uc *UserController) GetUserFollowers(ctx context.Context) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		userClaims, ok := c.Get("decodedToken")
+		if !ok {
+			log.Error().Msg("user claims not found in context")
+			c.AbortWithStatusJSON(400, gin.H{
+				"error":   "operation_not_allowed",
+				"message": "user claims not found in context",
+			})
+			collectMetrics(uc.Metrics, &internal.MetricsInput{
+				Code:   internal.BadRequest,
+				Method: internal.GET,
+				Route:  "/user/followers",
+			}, start)
+			return
+		}
+
+		var user models.User
+		err := uc.DB.Where("email = ?", userClaims.(*middlewares.Claims).Email).Table("User").Unscoped().First(&user).Error
+		if err != nil {
+			log.Error().Err(err).Msg("error retrieving user from database")
+			c.AbortWithStatusJSON(500, gin.H{
+				"error":   "operation_not_allowed",
+				"message": "error retrieving user from database",
+			})
+			collectMetrics(uc.Metrics, &internal.MetricsInput{
+				Code:   internal.InternalServerError,
+				Method: internal.GET,
+				Route:  "/user/followers",
+			}, start)
+			return
+		}
+
+		var followers []models.User
+		err = uc.DB.Raw(`select u.* from "User" u join "User_Followers" uf on u.id = uf.follower_id where uf.user_id = ?;`, user.Id).Find(&followers).Error
+		if err != nil {
+			log.Error().Err(err).Msg("error retrieving user followers from database")
+			c.AbortWithStatusJSON(500, gin.H{
+				"error":   "operation_not_allowed",
+				"message": "error retrieving user followers from database",
+			})
+			collectMetrics(uc.Metrics, &internal.MetricsInput{
+				Code:   internal.InternalServerError,
+				Method: internal.GET,
+				Route:  "/user/followers",
+			}, start)
+			return
+		}
+
+		log.Info().Str("module", "controller.user").Str("function", "GetUserFollowers").Msg("user followers retrieved successfully")
+		c.JSON(200, gin.H{
+			"followers": followers,
+		})
+		collectMetrics(uc.Metrics, &internal.MetricsInput{
+			Code:   internal.Ok,
+			Method: internal.GET,
+			Route:  "/user/followers",
+		}, start)
+	}
+}
+
+func (uc *UserController) GetUserFollowing(ctx context.Context) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		userClaims, ok := c.Get("decodedToken")
+		if !ok {
+			log.Error().Msg("user claims not found in context")
+			c.AbortWithStatusJSON(400, gin.H{
+				"error":   "operation_not_allowed",
+				"message": "user claims not found in context",
+			})
+			collectMetrics(uc.Metrics, &internal.MetricsInput{
+				Code:   internal.BadRequest,
+				Method: internal.GET,
+				Route:  "/user/following",
+			}, start)
+			return
+		}
+
+		var user models.User
+		err := uc.DB.Where("email = ?", userClaims.(*middlewares.Claims).Email).Table("User").Unscoped().First(&user).Error
+		if err != nil {
+			log.Error().Err(err).Msg("error retrieving user from database")
+			c.AbortWithStatusJSON(500, gin.H{
+				"error":   "operation_not_allowed",
+				"message": "error retrieving user from database",
+			})
+			collectMetrics(uc.Metrics, &internal.MetricsInput{
+				Code:   internal.InternalServerError,
+				Method: internal.GET,
+				Route:  "/user/following",
+			}, start)
+			return
+		}
+
+		var following []models.User
+		err = uc.DB.Raw(`select u.* from "User" u join "User_Followers" uf on u.id = uf.user_id where uf.follower_id = ?;`, user.Id).Find(&following).Error
+		if err != nil {
+			log.Error().Err(err).Msg("error retrieving user following from database")
+			c.AbortWithStatusJSON(500, gin.H{
+				"error":   "operation_not_allowed",
+				"message": "error retrieving user following from database",
+			})
+			collectMetrics(uc.Metrics, &internal.MetricsInput{
+				Code:   internal.InternalServerError,
+				Method: internal.GET,
+				Route:  "/user/following",
+			}, start)
+			return
+		}
+
+		log.Info().Str("module", "controller.user").Str("function", "GetUserFollowing").Msg("user following retrieved successfully")
+		c.JSON(200, gin.H{
+			"following": following,
+		})
+		collectMetrics(uc.Metrics, &internal.MetricsInput{
+			Code:   internal.Ok,
+			Method: internal.GET,
+			Route:  "/user/following",
+		}, start)
+	}
+}
+
 func collectMetrics(pm *internal.PromMetrics, metrics *internal.MetricsInput, t time.Time) {
-	pm.ObserveResponseTime(metrics.Code, metrics.Method, time.Since(t).Seconds())
-	pm.IncHttpTransaction(metrics.Code, metrics.Method)
+	pm.ObserveResponseTime(metrics.Code, metrics.Method, metrics.Route, time.Since(t).Seconds())
+	pm.IncHttpTransaction(metrics.Code, metrics.Method, metrics.Route)
 }

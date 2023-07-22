@@ -29,6 +29,7 @@ const (
 	POST                = "POST"
 	Success             = "SUCCESS"
 	Error               = "ERROR"
+	VerifyToken         = "verifyToken"
 )
 
 func InitPromMetrics(prefix string, buckets []float64) *PromMetrics {
@@ -37,12 +38,12 @@ func InitPromMetrics(prefix string, buckets []float64) *PromMetrics {
 		httpTransactionTotal: promauto.NewCounterVec(prometheus.CounterOpts{
 			Name: prefix + "_requests_total",
 			Help: "total HTTP requests processed",
-		}, []string{"code", "method"}),
+		}, []string{"code", "method", "route"}),
 		httpResponseTimeHistogram: promauto.NewHistogramVec(prometheus.HistogramOpts{
 			Name:    prefix + "_response_time_seconds",
 			Help:    "Histogram of response time for handler",
 			Buckets: buckets,
-		}, []string{"code", "method"}),
+		}, []string{"code", "method", "route"}),
 		buckets: buckets,
 	}
 }
@@ -54,10 +55,10 @@ func PrometheusHandler() gin.HandlerFunc {
 	}
 }
 
-func (pm *PromMetrics) ObserveResponseTime(code string, method string, time float64) {
-	pm.httpResponseTimeHistogram.WithLabelValues(code, method).Observe(time)
+func (pm *PromMetrics) ObserveResponseTime(code string, method string, route string, time float64) {
+	pm.httpResponseTimeHistogram.WithLabelValues(code, method, route).Observe(time)
 }
 
-func (pm *PromMetrics) IncHttpTransaction(code string, method string) {
-	pm.httpTransactionTotal.WithLabelValues(code, method).Inc()
+func (pm *PromMetrics) IncHttpTransaction(code string, method string, route string) {
+	pm.httpTransactionTotal.WithLabelValues(code, method, route).Inc()
 }

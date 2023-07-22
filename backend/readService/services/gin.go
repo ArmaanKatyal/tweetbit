@@ -47,6 +47,8 @@ func NewRouter(ctx context.Context, pm *internal.PromMetrics) *gin.Engine {
 			userGroup.GET("", uc.GetUser(ctx))
 			userGroup.GET("/likes", uc.GetUserLikes(ctx))
 			userGroup.GET("/replies", uc.GetUserReplies(ctx))
+			userGroup.GET("/followers", uc.GetUserFollowers(ctx))
+			userGroup.GET("/following", uc.GetUserFollowing(ctx))
 		}
 	}
 	return router

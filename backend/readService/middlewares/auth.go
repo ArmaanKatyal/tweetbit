@@ -21,7 +21,7 @@ func VerifyToken(pm *internal.PromMetrics) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := helpers.ExtractAuthToken(c)
 		if token == "" {
-			pm.IncHttpTransaction(internal.BadRequest, internal.GET)
+			pm.IncHttpTransaction(internal.BadRequest, internal.GET, internal.VerifyToken)
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"message": "Unauthorized - No token provided",
 			})
@@ -34,7 +34,7 @@ func VerifyToken(pm *internal.PromMetrics) gin.HandlerFunc {
 		})
 
 		if err != nil {
-			pm.IncHttpTransaction(internal.BadRequest, internal.GET)
+			pm.IncHttpTransaction(internal.BadRequest, internal.GET, internal.VerifyToken)
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"message": err.Error(),
 			})
@@ -42,7 +42,7 @@ func VerifyToken(pm *internal.PromMetrics) gin.HandlerFunc {
 		}
 
 		if !parsedJwt.Valid {
-			pm.IncHttpTransaction(internal.BadRequest, internal.GET)
+			pm.IncHttpTransaction(internal.BadRequest, internal.GET, internal.VerifyToken)
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"message": "Unauthorized - Invalid token",
 			})
@@ -50,7 +50,7 @@ func VerifyToken(pm *internal.PromMetrics) gin.HandlerFunc {
 		}
 
 		if claims.Token_type != "access" {
-			pm.IncHttpTransaction(internal.BadRequest, internal.GET)
+			pm.IncHttpTransaction(internal.BadRequest, internal.GET, internal.VerifyToken)
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"message": "Unauthorized - Invalid token type",
 			})

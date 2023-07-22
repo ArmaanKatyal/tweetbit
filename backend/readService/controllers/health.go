@@ -15,6 +15,6 @@ type HealthController struct {
 func (hc *HealthController) Status(c *gin.Context) {
 	start := time.Now()
 	c.JSON(http.StatusOK, gin.H{"status": "OK"})
-	hc.Metrics.ObserveResponseTime(internal.Success, internal.GET, time.Since(start).Seconds())
-	hc.Metrics.IncHttpTransaction(internal.Success, internal.GET)
+	hc.Metrics.ObserveResponseTime(internal.Success, internal.GET, "/health", time.Since(start).Seconds())
+	hc.Metrics.IncHttpTransaction(internal.Success, internal.GET, "/health")
 }
