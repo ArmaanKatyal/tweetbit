@@ -1,5 +1,8 @@
 {
     "server": {
         "port": ":5006"
+    },
+    "redis": {
+        "port": "localhost:6379"
     }
 }

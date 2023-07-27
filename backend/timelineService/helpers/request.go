@@ -13,3 +13,7 @@ func ExtractAuthToken(c *gin.Context) string {
 
 	return strings.Replace(c.GetHeader("Authorization"), "Bearer ", "", 1)
 }
+
+func ExtractApiKey(c *gin.Context) string {
+	return c.GetHeader("X-API-KEY")
+}

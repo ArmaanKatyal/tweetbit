@@ -30,6 +30,7 @@ const (
 	Success             = "SUCCESS"
 	Error               = "ERROR"
 	VerifyToken         = "verifyToken"
+	VerifyApiKey        = "verifyApiKey"
 )
 
 func InitPromMetrics(prefix string, buckets []float64) *PromMetrics {

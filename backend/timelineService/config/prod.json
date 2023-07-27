@@ -1,5 +1,8 @@
 {
     "server": {
         "port": ":5006"
+    },
+    "redis": {
+        "port": "redis:6379"
     }
 }

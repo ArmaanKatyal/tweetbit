@@ -60,3 +60,24 @@ func VerifyToken(pm *internal.PromMetrics) gin.HandlerFunc {
 		c.Set("decodedToken", claims)
 	}
 }
+
+func VerifyApiKey(pm *internal.PromMetrics) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		apiKey := helpers.ExtractApiKey(c)
+		if apiKey == "" {
+			pm.IncHttpTransaction(internal.BadRequest, internal.GET, internal.VerifyApiKey)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"message": "Unauthorized - No api key provided",
+			})
+			return
+		}
+
+		if apiKey != utils.GetEnvValue("API_KEY") {
+			pm.IncHttpTransaction(internal.BadRequest, internal.GET, internal.VerifyApiKey)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"message": "Unauthorized - Invalid api key",
+			})
+			return
+		}
+	}
+}
