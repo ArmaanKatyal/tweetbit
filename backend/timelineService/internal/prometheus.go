@@ -1,6 +1,8 @@
 package internal
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -62,4 +64,9 @@ func (pm *PromMetrics) ObserveResponseTime(code string, method string, route str
 
 func (pm *PromMetrics) IncHttpTransaction(code string, method string, route string) {
 	pm.httpTransactionTotal.WithLabelValues(code, method, route).Inc()
+}
+
+func CollectMetrics(pm *PromMetrics, metrics *MetricsInput, t time.Time) {
+	pm.ObserveResponseTime(metrics.Code, metrics.Method, metrics.Route, time.Since(t).Seconds())
+	pm.IncHttpTransaction(metrics.Code, metrics.Method, metrics.Route)
 }

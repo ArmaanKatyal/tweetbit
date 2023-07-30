@@ -11,7 +11,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres"]
+      test: [ "CMD", "pg_isready", "-U", "postgres" ]
     volumes:
       - "postgres:/var/lib/postgresql/data"
   nginx:
@@ -32,7 +32,7 @@ services:
       - authservice
       - writeservice
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:80/health" ]
   zookeeper:
     image: "confluentinc/cp-zookeeper:7.3.0"
     hostname: zookeeper
@@ -43,7 +43,14 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     healthcheck:
-      test: ["CMD", "zookeeper-shell", "localhost:2181", "ls", "/"]
+      test:
+        [
+          "CMD",
+          "zookeeper-shell",
+          "localhost:2181",
+          "ls",
+          "/"
+        ]
   broker:
     image: "confluentinc/cp-kafka:7.3.0"
     hostname: kafka
@@ -69,7 +76,13 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
     healthcheck:
       test:
-        ["CMD", "kafka-topics", "--bootstrap-server", "broker:9092", "--list"]
+        [
+          "CMD",
+          "kafka-topics",
+          "--bootstrap-server",
+          "broker:9092",
+          "--list"
+        ]
   mongodb:
     image: mongo:6.0.3
     container_name: mongo1
@@ -102,7 +115,7 @@ services:
       - "6379:6379"
     restart: always
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
     volumes:
       - "redis:/data"
   elasticsearch_some:
@@ -116,7 +129,7 @@ services:
       - "9200:9200"
     restart: always
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      test: [ "CMD", "curl", "-f", "http://localhost:9200" ]
   jaeger:
     image: jaegertracing/all-in-one:1.46
     container_name: jaeger1
@@ -147,7 +160,7 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: [ "CMD", "curl", "-f", "http://localhost:3000" ]
   prometheus:
     image: prom/prometheus:v2.44.0
     container_name: prometheus1
@@ -180,7 +193,7 @@ services:
       jaeger:
         condition: service_started
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
   searchservice:
     build:
       context: searchService
@@ -199,7 +212,7 @@ services:
       jaeger:
         condition: service_started
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
   fanoutservice:
     build:
       context: fanoutService
@@ -229,7 +242,7 @@ services:
       mongodb:
         condition: service_started
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
   writeservice:
     build:
       context: writeService
@@ -244,7 +257,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:5002/health" ]
   readservice:
     build:
       context: readService
@@ -257,7 +270,22 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5005/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:5005/health" ]
+  timelineservice:
+    build:
+      context: timelineService
+      dockerfile: ./Dockerfile
+    container_name: timelineservice
+    hostname: timelineservice
+    ports:
+      - "5006:5006"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5006/health" ]
 volumes:
   postgres:
     driver: local

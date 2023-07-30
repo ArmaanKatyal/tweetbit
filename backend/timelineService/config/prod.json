@@ -4,5 +4,11 @@
     },
     "redis": {
         "port": "redis:6379"
+    },
+    "database": {
+        "host": "db",
+        "port": "5432",
+        "username": "postgres",
+        "password": "postgres"
     }
 }
