@@ -36,7 +36,7 @@ func (htc *UserTimelineController) GetUserTimeline(ctx context.Context) gin.Hand
 			return
 		}
 
-		// TODO: fetch tweets from postgres
+		// fetch tweets from postgres
 		var tweets []models.Tweet
 		err := htc.Db.Table("Tweet").Where("user_id = ?", userId).Find(&tweets).Error
 		if err != nil {
@@ -53,20 +53,24 @@ func (htc *UserTimelineController) GetUserTimeline(ctx context.Context) gin.Hand
 			return
 		}
 
-		// sort tweets by created_at
-		if order == "desc" {
-			sort.SliceStable(tweets, func(i, j int) bool {
-				return tweets[i].Created_at.After(*tweets[j].Created_at)
-			})
-		} else if order == "asc" {
+		// sort tweets by created_at (desc by default)
+		if order == "asc" {
 			sort.SliceStable(tweets, func(i, j int) bool {
 				return tweets[i].Created_at.Before(*tweets[j].Created_at)
+			})
+		} else {
+			sort.SliceStable(tweets, func(i, j int) bool {
+				return tweets[i].Created_at.After(*tweets[j].Created_at)
 			})
 		}
 
 		c.JSON(200, gin.H{
 			"tweets": tweets,
 		})
-
+		internal.CollectMetrics(htc.Metrics, &internal.MetricsInput{
+			Code:   internal.Ok,
+			Method: internal.GET,
+			Route:  "/usertimeline",
+		}, start)
 	}
 }

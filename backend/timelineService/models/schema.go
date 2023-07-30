@@ -44,3 +44,13 @@ type Tweet_Comments struct {
 	Content    string     `json:"content"`
 	Created_at *time.Time `json:"created_at"`
 }
+
+type Tweet_Redis struct {
+	Id             string     `json:"id"`
+	Uuid           string     `json:"uuid"`
+	User_id        string     `json:"user_id"`
+	Content        string     `json:"content"`
+	Created_at     *time.Time `json:"created_at"`
+	Likes_count    string     `json:"likes_count"`
+	Retweets_count string     `json:"retweets_count"`
+}
