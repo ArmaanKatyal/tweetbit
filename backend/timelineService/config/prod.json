@@ -1,0 +1,14 @@
+{
+    "server": {
+        "port": ":5006"
+    },
+    "redis": {
+        "port": "redis:6379"
+    },
+    "database": {
+        "host": "db",
+        "port": "5432",
+        "username": "postgres",
+        "password": "postgres"
+    }
+}

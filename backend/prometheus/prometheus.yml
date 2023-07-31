@@ -23,3 +23,6 @@ scrape_configs:
   - job_name: readservice
     static_configs:
       - targets: ["readservice:5005"]
+  - job_name: timelineservice
+    static_configs:
+      - targets: ["timelineservice:5006"]
