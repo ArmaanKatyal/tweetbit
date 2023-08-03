@@ -31,29 +31,29 @@ func NewRouter(ctx context.Context, pm *internal.PromMetrics) *gin.Engine {
 
 	v1 := router.Group("/api/v1")
 	{
-		homeTimelineGroup := v1.Group("/home_timeline")
+		homeTimelineGroup := v1.Group("/hometimeline")
 		{
-			htc := controllers.HomeTimelineController{Metrics: pm}
-			homeTimelineGroup.GET("", htc.GetHomeTimeline(ctx))
+			htc := controllers.HomeTimelineController{Metrics: pm, DB: ds.GetDatabase()}
+			go homeTimelineGroup.GET("", htc.GetHomeTimeline(ctx))
 		}
-		userTimelineGroup := v1.Group("/user_timeline")
+		userTimelineGroup := v1.Group("/usertimeline")
 		{
 			utc := controllers.UserTimelineController{Metrics: pm}
-			userTimelineGroup.GET("", utc.GetUserTimeline(ctx))
+			go userTimelineGroup.GET("", utc.GetUserTimeline(ctx))
 		}
 		userGroup := v1.Group("/user")
 		{
 			uc := controllers.UserController{Metrics: pm, DB: ds.GetDatabase()}
-			userGroup.GET("", uc.GetUser(ctx))
-			userGroup.GET("/likes", uc.GetUserLikes(ctx))
-			userGroup.GET("/replies", uc.GetUserReplies(ctx))
-			userGroup.GET("/followers", uc.GetUserFollowers(ctx))
-			userGroup.GET("/following", uc.GetUserFollowing(ctx))
+			go userGroup.GET("", uc.GetUser(ctx))
+			go userGroup.GET("/likes", uc.GetUserLikes(ctx))
+			go userGroup.GET("/replies", uc.GetUserReplies(ctx))
+			go userGroup.GET("/followers", uc.GetUserFollowers(ctx))
+			go userGroup.GET("/following", uc.GetUserFollowing(ctx))
 		}
 		tweetGroup := v1.Group("/tweet")
 		{
 			tc := controllers.TweetController{Metrics: pm, DB: ds.GetDatabase()}
-			tweetGroup.GET("", tc.GetTweet(ctx))
+			go tweetGroup.GET("", tc.GetTweet(ctx))
 		}
 	}
 	return router
