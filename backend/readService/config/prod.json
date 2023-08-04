@@ -7,5 +7,9 @@
         "port": "5432",
         "username": "postgres",
         "password": "postgres"
+    },
+    "timelineservice": {
+        "url": "http://timelineservice:5006/api/v1/",
+        "apikey": "test"
     }
 }

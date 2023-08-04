@@ -15,5 +15,5 @@ func ExtractAuthToken(c *gin.Context) string {
 }
 
 func ExtractApiKey(c *gin.Context) string {
-	return c.GetHeader("X-API-KEY")
+	return c.GetHeader("x-api-key")
 }
