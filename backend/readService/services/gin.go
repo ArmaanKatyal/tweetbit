@@ -38,7 +38,7 @@ func NewRouter(ctx context.Context, pm *internal.PromMetrics) *gin.Engine {
 		}
 		userTimelineGroup := v1.Group("/usertimeline")
 		{
-			utc := controllers.UserTimelineController{Metrics: pm}
+			utc := controllers.UserTimelineController{Metrics: pm, DB: ds.GetDatabase()}
 			go userTimelineGroup.GET("", utc.GetUserTimeline(ctx))
 		}
 		userGroup := v1.Group("/user")
