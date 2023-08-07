@@ -63,3 +63,19 @@ Manages the write model of the application. It is responsible for creating and u
 
 #### Dependent on:
 - [Postgres](https://www.postgresql.org/)
+- [FanoutService](#fanoutservice)
+
+## Database
+The database is a Postgres database. It is used by the [ReadService](#readservice), [TimelineService](#timelineservice), and [WriteService](#writeservice).
+
+## Search Index
+The search index is an Elasticsearch index. It is used by the [SearchService](#searchservice).
+
+## Message Broker
+The message broker is a Kafka cluster. It is used by the [FanoutService](#fanoutservice), [SearchService](#searchservice) and [UserGraphService](#usergraphservice).
+
+## Cache
+The cache is a Redis cluster. It is used by the [AuthService](#authservice), [TimelineService](#timelineservice), and [UserGraphService](#usergraphservice).
+
+## API Gateway
+The API Gateway is an NGINX server. It is used to route requests to the correct service. For kubernetes an ingress controller is used instead.
