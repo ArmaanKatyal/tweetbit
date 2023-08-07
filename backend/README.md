@@ -79,3 +79,20 @@ The cache is a Redis cluster. It is used by the [AuthService](#authservice), [Ti
 
 ## API Gateway
 The API Gateway is an NGINX server. It is used to route requests to the correct service. For kubernetes an ingress controller is used instead.
+- [NGINX](https://www.nginx.com/)
+- [Kubernetes Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/)
+
+## Monitoring
+The monitoring is done with Prometheus and Grafana. It is used to monitor the health of the services and the cluster.
+- [Prometheus](https://prometheus.io/)
+- [Grafana](https://grafana.com/)
+
+## Logging
+The logging is done with the ELK stack. It is used to log the requests and errors of the services.
+- [Elasticsearch](https://www.elastic.co/)
+- [Logstash](https://www.elastic.co/logstash)
+- [Kibana](https://www.elastic.co/kibana)
+
+## Tracing
+The tracing is done with Jaeger. It is used to trace the requests between the services.
+- [Opentelemetry](https://opentelemetry.io/)
