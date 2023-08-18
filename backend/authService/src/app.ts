@@ -6,8 +6,6 @@ import cookieParser from 'cookie-parser';
 import logger from './utils/log.util';
 import expressPino from 'express-pino-logger';
 import pinoHttp from 'pino-http';
-
-// import routes
 import { authRouter } from './routes/auth.route';
 import { register } from 'prom-client';
 import {
@@ -58,7 +56,7 @@ app.use(
 );
 
 // Add headers before the routes are defined
-app.use(function (req: Request, res: Response, next: NextFunction) {
+app.use(function (_: Request, res: Response, next: NextFunction) {
     res.header('Content-Type', 'application/json'); // set default content type
     res.header('Access-Control-Allow-Credentials', 'true'); // allow cookies
     res.header(
@@ -71,7 +69,7 @@ app.use(function (req: Request, res: Response, next: NextFunction) {
 app.use(express.json()); // parse requests of content-type - application/json
 app.use(cookieParser());
 
-app.get('/', (req, res) => {
+app.get('/', (_, res) => {
     res.status(200).json({
         status: mongoose.connection.readyState,
         database: mongoose.connection.name,
@@ -85,7 +83,7 @@ app.get('/health', (_: Request, res: Response) => {
     ObserveHttpResponseTime(MetricsCode.Ok, MetricsMethod.Get, Date.now() - start);
 });
 
-app.get('/metrics', async (req: Request, res: Response) => {
+app.get('/metrics', async (_: Request, res: Response) => {
     try {
         res.set('Content-Type', register.contentType);
         res.end(await register.metrics());
