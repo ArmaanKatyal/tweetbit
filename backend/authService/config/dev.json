@@ -17,7 +17,7 @@
     "token": {
         "expire": {
             "access": "1h",
-            "refresh": "7d"
+            "refresh": "5h"
         }
     },
     "prometheus": {

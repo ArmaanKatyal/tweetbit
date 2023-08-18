@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import { SECRET_KEY } from '../middlewares/auth.middleware';
+import { SECRET_KEY, TokenPayload } from '../middlewares/auth.middleware';
 import { validateLogin, validateRegister } from '../validation/auth.validate';
 import { Auth } from '../models/auth.model';
 import nodeConfig from 'config';
@@ -138,7 +138,7 @@ const login = async (req: Request, res: Response) => {
     collectMetrics(MetricsCode.Ok, MetricsMethod.Post, start);
 };
 
-const logout = async (req: Request, res: Response) => {
+const logout = async (_: Request, res: Response) => {
     let start = Date.now();
     res.clearCookie('refresh_token');
     res.clearCookie('access_token');
@@ -150,20 +150,67 @@ const logout = async (req: Request, res: Response) => {
 
 const refresh = async (req: Request, res: Response) => {
     let start = Date.now();
-    const access_token = jwt.sign(
-        {
-            email: (req as any).token.email,
-        },
-        SECRET_KEY,
-        {
-            expiresIn: nodeConfig.get('token.expire.access'),
-        }
-    );
 
-    res.status(200).json({
-        access_token,
-    });
-    collectMetrics(MetricsCode.Ok, MetricsMethod.Get, start);
+    // get the token from the cookies or the header of the request
+    let token = req.cookies.refresh_token || req.headers['x-refresh-token'];
+    if (!token) {
+        req.log.info({
+            message: 'No refresh token found',
+            service: 'auth',
+            function: 'refresh',
+        });
+        collectMetrics(MetricsCode.BadRequest, MetricsMethod.Post, start);
+        return res.status(400).json({ error: 'no_refresh_token_provided' });
+    }
+
+    // verify the token
+    try {
+        let decoded = jwt.verify(token, SECRET_KEY) as TokenPayload;
+        if (decoded.type !== 'refresh') {
+            req.log.info({
+                message: 'Invalid refresh token',
+                service: 'auth',
+                function: 'refresh',
+            });
+            collectMetrics(MetricsCode.BadRequest, MetricsMethod.Post, start);
+            return res.status(400).json({ error: 'invalid_refresh_token' });
+        }
+
+        // If the token is valid, create a new access token and send it
+        let access_token = jwt.sign(
+            {
+                email: decoded.email,
+                uuid: decoded.uuid,
+                type: 'access',
+            },
+            SECRET_KEY,
+            {
+                expiresIn: nodeConfig.get('token.expire.access'),
+            }
+        );
+
+        collectMetrics(MetricsCode.Ok, MetricsMethod.Post, start);
+        return res.status(200).json({ access_token });
+    } catch (error: any) {
+        req.log.error({
+            message: 'Error while verifying refresh token',
+            service: 'auth',
+            function: 'refresh',
+        });
+        if (error instanceof jwt.TokenExpiredError) {
+            return res.status(401).json({
+                error: 'token_expired',
+            });
+        } else if (error instanceof jwt.JsonWebTokenError) {
+            return res.status(401).json({
+                error: 'invalid_token',
+            });
+        } else {
+            return res.status(500).json({
+                error: 'internal_server_error',
+            });
+        }
+    }
 };
 
 const register = async (req: Request, res: Response) => {
@@ -206,7 +253,7 @@ const register = async (req: Request, res: Response) => {
     const newAuth = new Auth({
         uuid: uniqueID,
         email: req.body.email,
-        password: await bcrypt.hashSync(req.body.password, salt),
+        password: bcrypt.hashSync(req.body.password, salt),
     });
 
     try {
@@ -253,6 +300,61 @@ const register = async (req: Request, res: Response) => {
         message: 'User registered successfully',
     });
     collectMetrics(MetricsCode.Ok, MetricsMethod.Post, start);
+};
+
+export const checkToken = async (req: Request, res: Response) => {
+    let start = Date.now();
+    let token = req.cookies.access_token || req.headers['x-access-token'];
+    if (!token) {
+        req.log.error({
+            message: 'No access token found',
+            service: 'auth',
+            function: 'checkToken',
+        });
+        collectMetrics(MetricsCode.BadRequest, MetricsMethod.Get, start);
+        return res.status(400).json({ error: 'no_access_token_provided' });
+    }
+
+    // verify the token
+    try {
+        let decoded = jwt.verify(token, SECRET_KEY) as TokenPayload;
+        if (decoded.type !== 'access') {
+            req.log.info({
+                message: 'Invalid access token',
+                service: 'auth',
+                function: 'refresh',
+            });
+            collectMetrics(MetricsCode.BadRequest, MetricsMethod.Get, start);
+            return res.status(400).json({ error: 'invalid_access_token' });
+        }
+
+        collectMetrics(MetricsCode.Ok, MetricsMethod.Post, start);
+        return res.status(200).json({
+            exp: decoded.exp,
+            iat: decoded.iat,
+            uuid: decoded.uuid,
+            email: decoded.email,
+        });
+    } catch (error: any) {
+        req.log.error({
+            message: 'Error while verifying access token',
+            service: 'auth',
+            function: 'refresh',
+        });
+        if (error instanceof jwt.TokenExpiredError) {
+            return res.status(401).json({
+                error: 'token_expired',
+            });
+        } else if (error instanceof jwt.JsonWebTokenError) {
+            return res.status(401).json({
+                error: 'invalid_token',
+            });
+        } else {
+            return res.status(500).json({
+                error: 'internal_server_error',
+            });
+        }
+    }
 };
 
 const collectMetrics = (code: MetricsCode, method: MetricsMethod, time: number) => {
