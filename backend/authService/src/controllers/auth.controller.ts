@@ -173,9 +173,7 @@ const refresh = async (req: Request, res: Response) => {
                 function: 'refresh',
             });
             collectMetrics(MetricsCode.BadRequest, MetricsMethod.Post, start);
-            return res
-                .status(400)
-                .json({ error: 'invalid_refresh_token' });
+            return res.status(400).json({ error: 'invalid_refresh_token' });
         }
 
         // If the token is valid, create a new access token and send it
@@ -302,6 +300,61 @@ const register = async (req: Request, res: Response) => {
         message: 'User registered successfully',
     });
     collectMetrics(MetricsCode.Ok, MetricsMethod.Post, start);
+};
+
+export const checkToken = async (req: Request, res: Response) => {
+    let start = Date.now();
+    let token = req.cookies.access_token || req.headers['x-access-token'];
+    if (!token) {
+        req.log.error({
+            message: 'No access token found',
+            service: 'auth',
+            function: 'checkToken',
+        });
+        collectMetrics(MetricsCode.BadRequest, MetricsMethod.Get, start);
+        return res.status(400).json({ error: 'no_access_token_provided' });
+    }
+
+    // verify the token
+    try {
+        let decoded = jwt.verify(token, SECRET_KEY) as TokenPayload;
+        if (decoded.type !== 'access') {
+            req.log.info({
+                message: 'Invalid access token',
+                service: 'auth',
+                function: 'refresh',
+            });
+            collectMetrics(MetricsCode.BadRequest, MetricsMethod.Get, start);
+            return res.status(400).json({ error: 'invalid_access_token' });
+        }
+
+        collectMetrics(MetricsCode.Ok, MetricsMethod.Post, start);
+        return res.status(200).json({
+            exp: decoded.exp,
+            iat: decoded.iat,
+            uuid: decoded.uuid,
+            email: decoded.email,
+        });
+    } catch (error: any) {
+        req.log.error({
+            message: 'Error while verifying access token',
+            service: 'auth',
+            function: 'refresh',
+        });
+        if (error instanceof jwt.TokenExpiredError) {
+            return res.status(401).json({
+                error: 'token_expired',
+            });
+        } else if (error instanceof jwt.JsonWebTokenError) {
+            return res.status(401).json({
+                error: 'invalid_token',
+            });
+        } else {
+            return res.status(500).json({
+                error: 'internal_server_error',
+            });
+        }
+    }
 };
 
 const collectMetrics = (code: MetricsCode, method: MetricsMethod, time: number) => {
